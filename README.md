@@ -1,2 +1,3 @@
-# -Sprinkletron
-Waters my plants 
+# Sprinkletron
+🤖 Waters my plants 🌱 🦾
+
