@@ -71,8 +71,8 @@ void loop() {
 
 void sampleSoil(SharedState &s, bool verbose = false) {
     static const int SAMPLE_COUNT = 10; // number of samples to average
-    static const float MIN_MOISTURE_THRESHOLD = 2.3;
-    static const float MAX_MOISTURE_THRESHOLD = 1.6;
+    static const float MIN_MOISTURE_THRESHOLD = 2.2;
+    static const float MAX_MOISTURE_THRESHOLD = 1.7;
     static int decisionCount = 30; // number of samples to decide if we need to water, this is tied to awake from sleep
     static float lastReadings[SAMPLE_COUNT]; // store last readings for averaging
     static int readIndex = 0;
