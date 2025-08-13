@@ -88,7 +88,7 @@ I used a breadboard to wire the components together. The wiring is as follows:
 
 ## Measurement
 
-- On wake: power sensor, wait 30s, take 300 ADC readings, use mean in binning 10 readings at a time to reduce noise
+- On wake: power sensor, wait 30s, take 300 ADC readings, bin 10 readings at a time taking mean as sensor reading to reduce noise. End up with 30 readings.
 
 ## Actuation
 
