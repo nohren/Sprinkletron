@@ -2,11 +2,15 @@
 
 🤖 Waters my plants 🌱 🦾
 
-A single-purpose, low-power plant watering node. It wakes from deep sleep every 24 hours, samples a capacitive soil moisture sensor, and if dryness is detected, it runs a small pump. Then it returns to deep sleep.
+A single-purpose, low-power plant watering node. It wakes from deep sleep every 72 hours, samples a capacitive soil moisture sensor, and if dryness is detected, it runs a small pump. Then it returns to deep sleep.
+
+| ![Alt 1](./IMG_8050.jpeg) | ![Alt 2](./IMG_8048.jpeg) |
+| :-----------------------: | :-----------------------: |
+|          nice 😊          |      super nice! 🤩       |
 
 ## Install
 
-We will use [PlatformIO](https://platformio.org/) to build and upload the code to the ESP32. Get the VSCode extension or just install the CLI tool.
+I used [PlatformIO](https://platformio.org/) to build and upload the code to the ESP32. Get the VSCode extension or just install the CLI tool.
 
 ```bash
 pio project init --board esp32dev
@@ -34,13 +38,17 @@ pio run -e esp32dev -t upload
 
 ## Wiring
 
+<img src="./image.png" width="1400" alt="Sprinkletron GPIO Pinout">
+
 I used a breadboard to wire the components together. The wiring is as follows:
 
 - Soil moisture sensor:
 
-  - VCC → 5V
+  - VCC → 3V3
   - GND → GND
   - A0 → GPIO36 (ADC1)
+
+  Sensor values vary, best to test in your own setup.
 
 - Pump:
 
@@ -65,22 +73,6 @@ I used a breadboard to wire the components together. The wiring is as follows:
   - power supply → 5V
   - pin GPIO18 → Pump MOSFET gate
 
-## GPIO Pinout
-
-<img src="./image.png" width="1400" alt="Sprinkletron GPIO Pinout">
-
-Soil ADC: GPIO36 (input-only, ADC1)
-
-Sensor Observations:
-
-- In air 2.7v
-- In moist soil 2.1v
-- In water 1.0v
-
-* Sensor power switch: GPIO19 (any output-capable pin).
-
-* Pump MOSFET gate: GPIO18 (output).
-
 ## Notes
 
 - Make sure all ground is common between the ESP32, pump, all sensors.
@@ -92,16 +84,15 @@ Sensor Observations:
 
 - No WiFi/BT; deep sleep timer wake-up every 72 hours (`esp_sleep_enable_timer_wakeup`)
 - Sensor power is off except during measurement to reduce corrosion & power
+- sleep is measured in microseconds, be sure to convert and store as uint64_t before calling `esp_deep_sleep_start()`
 
 ## Measurement
 
-- On wake: power sensor, wait 200 ms, take 32 ADC readings, use median to reduce noise
-- Convert RAW to % using two-point calibration: `RAW_AIR` and `RAW_WATER`
-- Compare to `MOISTURE_THRESHOLD_PCT` (default 35%)
+- On wake: power sensor, wait 30s, take 300 ADC readings, use mean in binning 10 readings at a time to reduce noise
 
 ## Actuation
 
-- If % < threshold **and** at least 12 h since last water: run pump for `PUMP_MS` (default 6 s)
+- If voltage > moisture min threshold run pump untile voltage < moisture max threshold or for `PUMP_MS` (default 6 s)
 - Then sleep
 
 ## Risks & Mitigations
