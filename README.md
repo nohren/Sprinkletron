@@ -2,6 +2,8 @@
 
 🤖 Waters my plants 🌱 🦾
 
+A single-purpose, low-power plant watering node. It wakes from deep sleep every 24 hours, samples a capacitive soil moisture sensor, and if dryness is detected, it runs a small pump. Then it returns to deep sleep.
+
 ## Install
 
 We will use [PlatformIO](https://platformio.org/) to build and upload the code to the ESP32. Get the VSCode extension or just install the CLI tool.
@@ -67,15 +69,21 @@ I used a breadboard to wire the components together. The wiring is as follows:
 
 <img src="./image.png" width="1400" alt="Sprinkletron GPIO Pinout">
 
-- Soil ADC: GPIO34 (input-only, ADC1).
-- Sensor power switch: GPIO26 (any output-capable pin).
-- Pump MOSFET gate: GPIO25 (output).
+Soil ADC: GPIO36 (input-only, ADC1)
+
+Sensor Observations:
+
+- In air 2.7v
+- In moist soil 2.1v
+- In water 1.0v
+
+* Sensor power switch: GPIO19 (any output-capable pin).
+
+* Pump MOSFET gate: GPIO18 (output).
 
 # Sprinkletron — Design Doc
 
 ## Purpose
-
-A single-purpose, low-power plant watering node. It wakes from deep sleep every 4 hours, samples a capacitive soil moisture sensor, and if dryness is detected, it runs a small pump. Then it returns to deep sleep.
 
 ## Hardware (reference)
 
