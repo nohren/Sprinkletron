@@ -6,17 +6,7 @@ SharedState state; // global state
 
 
 //TODO
-
-// sleep mode - how to handle deep sleep?
-
-// sensor off in sleep awake when awake?
-// review PWM math
-
-
-// STATE MACHINE
-// this is a simple state machine for the pump and sensor
-// takes a shared state reference, and an action string 
-// mutates state based on the action
+// none
 
 void setState(SharedState &s, Action a) {
     switch (a) {
