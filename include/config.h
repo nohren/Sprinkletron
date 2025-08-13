@@ -13,7 +13,12 @@
 #endif
 
 // CONFIGURATION
-#define MAX_PUMP_TIME_MS 7000 // maximum time to run the pump in milliseconds (
+#define MAX_PUMP_TIME_MS 15000 // maximum time to run the pump in milliseconds (
+#define SLEEP_HOURS 72 // deep sleep interval in hours
+#define LOW_MOISTURE_THRESHOLD_VOLTAGE 2.4
+#define HIGH_MOISTURE_THRESHOLD_VOLTAGE 1.7
+#define SOFTSTART_MS 1000  // 0.3s kick
+#define MIN_RUN_PCT 55
 
 //state 
 struct SharedState {
@@ -22,18 +27,19 @@ struct SharedState {
     unsigned long lastSampleTime = 0; // last time we sampled the sensor
     unsigned long pumpStartTime = 0;   // last time we ran the pump
     bool buttonPressed = false; // for checking when its false when previous was true to turn on off pump.
-
+    int targetPumpPct = 65; // target pump duty cycle in percent (0-100)
 };
 
 // ---- Function declarations
 void pump(SharedState &s); // control pump based on state
 void button(SharedState &s);
 void sampleSoil(SharedState &s, bool verbose);
+void setPumpPct(int pct); // set pump duty cycle (0-100%)
+void drivePump(bool on, SharedState &s);
 float getVoltage(int raw);
 
 // // ---- Behavior
-// #define WAKE_INTERVAL_HOURS     24                     // deep sleep interval
-// #define PUMP_MS                 6000                  // run pump this long if dry (failsafe upper bound)
+
 // #define COOLDOWN_AFTER_PUMP_MS  2000                  // brief settle after watering (optional)
 
 // // Sensor warmup + sampling
@@ -46,7 +52,7 @@ float getVoltage(int raw);
 // #define RAW_WATER    1400   // example placeholder, measure yours!
 
 // // Threshold in % moisture below which we water
-// #define MOISTURE_THRESHOLD_PCT  35
+
 
 // // ---- Safety: minimum hours between water events (avoid stuck-on sensor causing floods)
 // #define MIN_HOURS_BETWEEN_WATER  12
