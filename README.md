@@ -81,32 +81,17 @@ Sensor Observations:
 
 * Pump MOSFET gate: GPIO18 (output).
 
-# Sprinkletron — Design Doc
+## Notes
 
-## Purpose
-
-## Hardware (reference)
-
-- ESP32-DevKit (or similar, 3.3V logic)
-- Capacitive soil moisture sensor (analog output, 3.3V compatible)
-- 5V DC micro pump (peristaltic preferred) + 5V supply
-- Logic-level N-MOSFET (e.g., AO3400, IRLZ44N, FQP30N06L) for low-side switching
-- Flyback diode across pump (e.g., 1N5819/SS14), cathode to +5V, anode to pump negative
-- Gate pulldown resistor (100k) to keep pump off at boot
-- Optional: P-MOSFET/high-side switch or small transistor to gate sensor VCC from ESP32 pin
-- Common ground between 5V supply and ESP32 GND
-
-## Pinning (example)
-
-- Sensor analog out → GPIO34 (ADC1)
-- Sensor VCC → switched by GPIO26 via a transistor (do not power heavy loads directly from a pin)
-- Pump MOSFET gate → GPIO25 (pulldown to GND)
+- Make sure all ground is common between the ESP32, pump, all sensors.
+- State machines are the most underrated concept in all of programming.
+- PWM - understand the duty cycle.
+- don't forget semicolons when compiling C++ code.
 
 ## Power & Sleep
 
-- No WiFi/BT; deep sleep timer wake-up every 4 hours (`esp_sleep_enable_timer_wakeup`)
+- No WiFi/BT; deep sleep timer wake-up every 72 hours (`esp_sleep_enable_timer_wakeup`)
 - Sensor power is off except during measurement to reduce corrosion & power
-- RTC fast memory stores `last_water_us` to enforce a minimum spacing between water events
 
 ## Measurement
 
