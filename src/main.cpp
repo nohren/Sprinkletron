@@ -132,7 +132,7 @@ void sampleSoil(SharedState &s, bool verbose = false)
             {
                 // if we are here, it means we are in water mode
                 // stop watering when too moist, go to sleep
-                if (((averageVoltage < MAX_MOISTURE_THRESHOLD) || (millis() - s.pumpStartTime) > MAX_PUMP_TIME_MS))
+                if ((averageVoltage < MAX_MOISTURE_THRESHOLD) || ((millis() - s.pumpStartTime) > MAX_PUMP_TIME_MS))
                 {
                     Serial.println("Soil moisture is too high, stopping watering.");
                     setState(s, Action::SLEEP);
@@ -217,7 +217,7 @@ void pump(SharedState &s)
     }
     else
     {
-        if ((millis() - s.pumpStopTime) % FLASH_INTERVAL_MS < FLASH_INTERVAL_MS / 2)
+        if (((millis() - s.pumpStopTime) % FLASH_INTERVAL_MS) < FLASH_INTERVAL_MS / 2)
         {
             digitalWrite(LED_BUILTIN, HIGH);
         }
