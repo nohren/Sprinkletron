@@ -1,12 +1,17 @@
-# Sprinkletron
+# 🤖 Sprinkletron
 
-🤖 Waters my plants 🌱 🦾
+An affectionately faithful plant waterer 🤖 💖 🌱 🦾
 
 A single-purpose, low-power plant watering node. It wakes from deep sleep every 72 hours, samples a capacitive soil moisture sensor, and if dryness is detected, it runs a small pump. Then it returns to deep sleep.
 
-| ![Alt 1](./IMG_8050.jpeg) | ![Alt 2](./IMG_8048.jpeg) |
+What it does **not** do:
+
+- No networking, no clock sync, no manual override, no fancy scheduling
+- It only wakes, checks, optionally waters, then sleeps
+
+| ![Alt 1](./IMG_7923.jpeg) | ![Alt 2](./IMG_8048.jpeg) |
 | :-----------------------: | :-----------------------: |
-|          nice 😊          |      super nice! 🤩       |
+|      looking sad 😢       |     looking bad 😎 🤩     |
 
 ## Install
 
@@ -73,6 +78,60 @@ I used a breadboard to wire the components together. The wiring is as follows:
   - power supply → 5V
   - pin GPIO18 → Pump MOSFET gate
 
+<img src="./IMG_8050.jpeg" width="1400" alt="Sprinkletron GPIO Pinout">
+
+## Pulse with Modulation (PWM)
+
+As a digital microprocessor and unlike analog devices, we can only send a HIGH or LOW signal to the pump circuit. So how do we change the speed of the motor if we can only signal all the way on or all the way off? It turns out that we can approximate an analog signal by rapidly switching the pump on and off at a certain frequency. It becomes a function of time.
+
+In the esp32:
+
+```cpp
+static const uint8_t  PWM_CH       = 0;       // PWM channel we will use
+static const uint32_t PWM_FREQ     = 20000;   // 20 kHz, the water pump does 20,000 cyles per second. This was a guess but it seems to work.
+static const uint8_t  PWM_RES_BITS = 10;      // 10-bit (0..1023) just means instead of out of 100 we are out of 1023 or 2^10-1
+```
+
+We initialize targetPumpPct to 80. Meaning we want the pump to run at 80% of its maximum speed or 80% of the duty cycle. The pump runs at 20,000 cycles per second.
+
+$$
+f = 20000 \text{ Hz}
+$$
+
+The time it takes for each cycle is the inverse of $f$.
+
+$$
+T = \frac{1}{f} = \frac{1}{20000} = 0.00005 \text{ seconds} = 50 \mu s
+$$
+
+For the $50\mu s$ in each cycle, we want the pump to be on for 80% of the time and off for 20% of the time.
+
+$$
+t_{on} = D * T = 0.8 * 50 \mu s = 40 \mu s
+$$
+
+$$
+t_{off} = (1 - D) * T = 0.2 * 50 \mu s = 10 \mu s
+$$
+
+Channel 0 is a 10-bit channel. What does this mean? It means that the duty cycle is represented in 10 bits, which gives us a range of values from 0 to 1023.
+
+$$
+\text{channel 0 bit space} = 2^{10} - 1 = 1023
+$$
+
+$$
+\text{duty cycle} = D * T = 0.8 * 1023\approx 818
+$$
+
+We set 818 as the fractional duty cycle value for the channel 0.
+
+```cpp
+ledcWrite(PWM_CH, 818);
+```
+
+For each $50 \mu s$ cycle we now get of the pump on for $40 \mu s$ and off for $10 \mu s$. This approximates 80% speed. This is how we can control the speed of the pump using PWM.
+
 ## Notes
 
 - Make sure all ground is common between the ESP32, pump, all sensors.
@@ -80,29 +139,24 @@ I used a breadboard to wire the components together. The wiring is as follows:
 - PWM - understand the duty cycle.
 - don't forget semicolons when compiling C++ code.
 
-## Power & Sleep
+### Power & Sleep
 
 - No WiFi/BT; deep sleep timer wake-up every 72 hours (`esp_sleep_enable_timer_wakeup`)
 - Sensor power is off except during measurement to reduce corrosion & power
 - sleep is measured in microseconds, be sure to convert and store as uint64_t before calling `esp_deep_sleep_start()`
 
-## Measurement
+### Measurement
 
 - On wake: power sensor, wait 30s, take 300 ADC readings, bin 10 readings at a time taking mean as sensor reading to reduce noise. End up with 30 readings.
 
-## Actuation
+### Actuation
 
-- If voltage > moisture min threshold run pump untile voltage < moisture max threshold or for `PUMP_MS` (default 6 s)
+- If voltage > moisture min threshold run pump untile voltage < moisture max threshold or for `PUMP_MS` (default 15s or 15000ms)
 - Then sleep
 
-## Risks & Mitigations
+### Risks & Mitigations
 
 - **Noisy sensor / false dry:** median filter + enforce min hours between waterings
 - **Flooding if stuck-low sensor:** hard cap on pump run time; min interval block
 - **Boot-time glitches:** pump gate pulldown resistor; initialize gate LOW early
 - **Power draw:** deep sleep between checks; sensor only powered while measuring
-
-## What it does **not** do
-
-- No networking, no clock sync, no manual override, no fancy scheduling
-- It only wakes, checks, optionally waters, then sleeps
