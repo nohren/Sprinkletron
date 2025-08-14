@@ -1,10 +1,10 @@
 #pragma once
 
 // ---- Pin map (change to match your wiring)
-#define PIN_SOIL_ADC        36    // sensor analog out -> ESP32 GPIO36
-#define PIN_SENSOR_PWR      19    // drives a transistor/high-side switch to power the sensor
-#define PIN_PUMP_GATE       18    // goes to MOSFET gate that switches the pump
-#define PIN_BUTTON          23     // push button to toggle pump on/off
+#define PIN_SOIL_ADC 36   // sensor analog out -> ESP32 GPIO36
+#define PIN_SENSOR_PWR 19 // drives a transistor/high-side switch to power the sensor
+#define PIN_PUMP_GATE 18  // goes to MOSFET gate that switches the pump
+#define PIN_BUTTON 23     // push button to toggle pump on/off
 
 // Many WROOM-32 dev boards wire the blue LED to GPIO 2.
 // If LED_BUILTIN isn't defined, fall back to 2.
@@ -12,28 +12,32 @@
 #define LED_BUILTIN 2
 #endif
 
-static const uint8_t PWM_CH       = 0;      // 0..15
-static const uint32_t PWM_FREQ     = 20000;  // 20 kHz (above audible range)
-static const uint8_t PWM_RES_BITS  = 10;     // 10-bit (0..1023)
-static const uint32_t SLEEP_HOURS  = 72;     // deep sleep interval in hours
+static const uint8_t PWM_CH = 0;        // 0..15
+static const uint32_t PWM_FREQ = 20000; // 20 kHz (above audible range)
+static const uint8_t PWM_RES_BITS = 10; // 10-bit (0..1023)
+static const uint32_t SLEEP_HOURS = 24; // deep sleep interval in hours
 static const uint8_t MIN_RUN_PCT = 55;
+static const float MIN_MOISTURE_THRESHOLD = 2.5;     // getting drier, avoid root rot, and we check every 24 hours. It can't get too dry. We don't need to know the rate of dryness if we check more frequently.
+static const float MAX_MOISTURE_THRESHOLD = 1.8;     // pretty damp
 static const unsigned long FLASH_INTERVAL_MS = 1000; // for led
 static const unsigned long MAX_PUMP_TIME_MS = 15000; // maximum time to run the pump in milliseconds
-static const unsigned long SOFTSTART_MS = 300;  // 0.3s kick
+static const unsigned long SOFTSTART_MS = 300;       // 0.3s kick
 
-enum class Action {
-    DRY,       // sense dry or wet soil
-    WATER,      // water the plant
-    SLEEP       // go to deep sleep
+enum class Action
+{
+    DRY,   // sense dry or wet soil
+    WATER, // water the plant
+    SLEEP  // go to deep sleep
 };
 
-//state 
-struct SharedState {
-    bool pumpRunning = false;   // true if pump is currently running
+// state
+struct SharedState
+{
+    bool pumpRunning = false;         // true if pump is currently running
     unsigned long lastSampleTime = 0; // last time we sampled the sensor
-    unsigned long pumpStartTime = 0;   // last time we ran the pump
-    unsigned long pumpStopTime = 0;    // last time we stopped the pump
-    int targetPumpPct = 80; // target pump duty cycle in percent (0-100)
+    unsigned long pumpStartTime = 0;  // last time we ran the pump
+    unsigned long pumpStopTime = 0;   // last time we stopped the pump
+    int targetPumpPct = 80;           // target pump duty cycle in percent (0-100)
 };
 
 // ---- Function declarations
