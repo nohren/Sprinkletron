@@ -147,21 +147,6 @@ Now for each $50 \mu s$ cycle we get the pump on for $40 \mu s$ and off for $10 
 - PWM - understand the duty cycle.
 - don't forget semicolons when compiling C++ code.
 
-### Power & Sleep
-
-- No WiFi/BT; deep sleep timer wake-up every 72 hours (`esp_sleep_enable_timer_wakeup`)
-- Sensor power is off except during measurement to reduce corrosion & power
-- sleep is measured in microseconds, be sure to convert and store as uint64_t before calling `esp_deep_sleep_start()`
-
-### Measurement
-
-- On wake: power sensor, wait 30s, take 300 ADC readings, bin 10 readings at a time taking mean as sensor reading to reduce noise. End up with 30 readings.
-
-### Actuation
-
-- If voltage > moisture min threshold run pump untile voltage < moisture max threshold or for `PUMP_MS` (default 15s or 15000ms)
-- Then sleep
-
 ### Risks & Mitigations
 
 - **Noisy sensor / false dry:** median filter + enforce min hours between waterings
