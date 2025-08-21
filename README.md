@@ -35,7 +35,7 @@ pio run -e esp32dev -t upload
 
 [Capacitive Soil Moisture Sensor](https://www.amazon.com/dp/B07SYBSHGX?ref=ppx_yo2ov_dt_b_fed_asin_title) - Corrosion Resistant Moisture Detection Garden Watering for Arduino DIY 3.3~5.5V
 
-[Adafruit 4546 Submersible 3V DC](https://www.amazon.com/dp/B085KYZCDV?ref=ppx_yo2ov_dt_b_fed_asin_title) - A small 3V DC pump that can be used to water plants. a DC motor that is powered with 3V and draws 100mA. When powered, the pump sucks water in from the side of the plastic casing and pushes it out the tubing port. The pump must be primed by keeping it inside water at all times. You can PWM the motor to speed up or slow down the flow rate.
+[Adafruit 4546 Submersible 3V DC](https://www.amazon.com/dp/B085KYZCDV?ref=ppx_yo2ov_dt_b_fed_asin_title) - A small 3V DC pump that can be used to water plants. a DC motor that is powered with 3V and draws 100mA. When powered, the pump sucks water in from the side of the plastic casing and pushes it out the tubing port. The pump must be primed by keeping it inside water at all times. You can PWM the motor power to speed up or slow down the flow rate.
 
 [RFP30N06LE RFP30 N-Channel Power MOSFET](https://www.amazon.com/dp/B08ZKYXN2M?ref=ppx_yo2ov_dt_b_fed_asin_title) - The MOSFET when it recieves 3.3v HIGH signal from the ESP32 will complete the pump circuit to ground allowing the pump to run. The MOSFET is used to switch the pump on and off.
 
@@ -82,25 +82,17 @@ I used a breadboard to wire the components together. The wiring is as follows:
 
 ## Pulse with Modulation (PWM)
 
-As a digital microprocessor and unlike analog devices, we can only send a HIGH or LOW signal to the pump circuit. So how do we change the speed of the motor if we can only signal all the way on or all the way off? It turns out that we can approximate an analog signal by rapidly switching the pump on and off at a certain frequency. It becomes a function of time.
+Digital devices output 1's and 0's. i.e HIGH or LOW signal. So how do we change the power of the motor if we can only tell it to be ON or OFF? It turns out that we can approximate an analog signal by switching the pump on for a period of time and off again in a repeating cycle. This technique is called Pulse Width Modulation (PWM). The ratio of the time the pump is on to the total time of the cycle is called the duty cycle. The duty cycle is expressed as a percentage, where 100% means the pump is always on, and 0% means it is always off.
 
-In the esp32:
+Lets say we want the water pump to run at 80% of its maximum power.
 
-```cpp
-static const uint8_t  PWM_CH       = 0;       // PWM channel we will use
-static const uint32_t PWM_FREQ     = 20000;   // 20 kHz, the water pump does 20,000 cyles per second. This was a guess but it seems to work.
-static const uint8_t  PWM_RES_BITS = 10;      // 10-bit (0..1023) just means instead of out of 100 we are out of 1023 or 2^10-1
-```
-
-We initialize targetPumpPct to the integer 80. Meaning we want the pump to run at 80% of its maximum speed. In more technical terms we want it to run at 80% of the duty cycle.
-
-The pump runs at 20,000 cycles per second.
+Given that the pump runs at 20,000 cycles per second.
 
 $$
 f = 20000 \text{ Hz}
 $$
 
-The time it takes to complete a cycle is the period T expressed as:
+Then the time it takes to complete a single cycle is expressed as the period $T$:
 
 $$
 T = f^{-1} = \frac{1}{20000} = 0.00005 \text{ seconds} = 50 \mu s
@@ -138,7 +130,7 @@ int duty = (80 * maxDuty) / 100; // 80% duty cycle
 ledcWrite(PWM_CH, duty);
 ```
 
-Now for each $50 \mu s$ cycle we get the pump on for $40 \mu s$ and off for $10 \mu s$. This approximates 80% speed with a digital signal.
+Now for each $50 \mu s$ cycle we get the pump on for $40 \mu s$ and off for $10 \mu s$. This approximates 80% power with a digital signal.
 
 ## Notes
 
