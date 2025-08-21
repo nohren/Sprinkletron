@@ -127,8 +127,13 @@ $$
 $$
 
 ```cpp
+//setup PWM channel
+ledcSetup(0, 20000, 10);
+
 // notice that targetPumpPct is an integer value 80, not a floating point 0.8.
-// We do this in integer math the entire time. For embedded systems this is important to avoid floating point overhead as much as possible to keep the code fast and efficient.
+// We do this in integer math the entire time. For embedded systems it is important
+// to avoid floating point overhead as much as possible
+// this keeps the code fast and efficient.
 int maxDuty = (1 << PWM_RES_BITS) - 1; // 1023 for 10 bits
 int duty = (targetPumpPct * maxDuty) / 100; // 80% duty cycle
 ledcWrite(PWM_CH, duty);
