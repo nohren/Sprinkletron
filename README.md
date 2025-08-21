@@ -92,29 +92,31 @@ static const uint32_t PWM_FREQ     = 20000;   // 20 kHz, the water pump does 20,
 static const uint8_t  PWM_RES_BITS = 10;      // 10-bit (0..1023) just means instead of out of 100 we are out of 1023 or 2^10-1
 ```
 
-We initialize targetPumpPct to 80. Meaning we want the pump to run at 80% of its maximum speed or 80% of the duty cycle. The pump runs at 20,000 cycles per second.
+We initialize targetPumpPct to the integer 80. Meaning we want the pump to run at 80% of its maximum speed. In more technical terms we want it to run at 80% of the duty cycle.
+
+The pump runs at 20,000 cycles per second.
 
 $$
 f = 20000 \text{ Hz}
 $$
 
-The time it takes for each cycle is the inverse of $f$.
+The time it takes to complete a cycle is the period T expressed as:
 
 $$
-T = \frac{1}{f} = \frac{1}{20000} = 0.00005 \text{ seconds} = 50 \mu s
+T = f^{-1} = \frac{1}{20000} = 0.00005 \text{ seconds} = 50 \mu s
 $$
 
-For the $50\mu s$ in each cycle, we want the pump to be on for 80% of the time and off for 20% of the time.
+For the $50\mu s$ in each cycle, we want the pump to be on for 80% of the time and off for 20%.
 
 $$
-t_{on} = D * T = 0.8 * 50 \mu s = 40 \mu s
+T_{on} = D * T = 0.8 * 50 \mu s = 40 \mu s
 $$
 
 $$
-t_{off} = (1 - D) * T = 0.2 * 50 \mu s = 10 \mu s
+T_{off} = (1 - D) * T = 0.2 * 50 \mu s = 10 \mu s
 $$
 
-Channel 0 is a 10-bit channel. What does this mean? It means that the duty cycle is represented in 10 bits, which gives us a range of values from 0 to 1023.
+The math is for illustration. The actual timing is handled at a lower level. All we need to do is set the appropriate values in the programming interface and it calculates and fires the PWM pulses itself. For the esp32 microcontroller we need to configure the PWM channel range. What does this mean? We are setting the denominator in the duty cycle ratio. In our case we set it to 10 bits, which gives us a range of values from 0 to 1023.
 
 $$
 \text{channel 0 bit space} = 2^{10} - 1 = 1023
@@ -124,13 +126,15 @@ $$
 \text{duty cycle} = D * T = 0.8 * 1023\approx 818
 $$
 
-We set 818 as the fractional duty cycle value for the channel 0.
-
 ```cpp
-ledcWrite(PWM_CH, 818);
+// notice that targetPumpPct is an integer value 80, not a floating point 0.8.
+// We do this in integer math the entire time. For embedded systems this is important to avoid floating point overhead as much as possible to keep the code fast and efficient.
+int maxDuty = (1 << PWM_RES_BITS) - 1; // 1023 for 10 bits
+int duty = (targetPumpPct * maxDuty) / 100; // 80% duty cycle
+ledcWrite(PWM_CH, duty);
 ```
 
-For each $50 \mu s$ cycle we now get of the pump on for $40 \mu s$ and off for $10 \mu s$. This approximates 80% speed. This is how we can control the speed of the pump using PWM.
+Now for each $50 \mu s$ cycle we now get of the pump on for $40 \mu s$ and off for $10 \mu s$. This approximates 80% speed with digital signal.
 
 ## Notes
 
