@@ -2,12 +2,19 @@
 
 An affectionately faithful plant waterer 🤖 💖 🌱 🦾
 
-A single-purpose, low-power plant watering node. It wakes from deep sleep every 72 hours, samples a capacitive soil moisture sensor, and if dryness is detected, it runs a small pump. Then it returns to deep sleep.
+A single-purpose, low-power plant watering node. It wakes from deep sleep in a set interval, waters the plant/s, and goes back to sleep.
+
+It can use a capacitive soil moisture sensor or just operated in a set interval. If using rainbird gph heads, provide the total gallons per hour in the system and the water tank capacity and it will calculate how many activations to run. This is so the pump doesn't dry out.
+
+Lets say we have 4 x 1 gph heads. We want to water for 5 min every activation. And we supply 2 gallons of water.
+
+$4 \text{gph} \times \frac{1}{12} \text{hours} = 0.333 \text{ gallons per activation}$
+$2/\text{0.333} \text{ gallons per activation} = 6 \text{ activations}$
 
 What it does **not** do:
 
 - No networking, no clock sync, no manual override, no fancy scheduling
-- It only wakes, checks, optionally waters, then sleeps
+- It only wakes, waters, then sleeps
 
 | ![Alt 1](./IMG_7923.jpeg) | ![Alt 2](./IMG_8048.jpeg) |
 | :-----------------------: | :-----------------------: |
