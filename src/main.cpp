@@ -67,7 +67,8 @@ void loop()
         if (state.tankCapacityGallons > 0 && state.GPHTotal > 0 && state.waterTime > 0) {
             setState(state, Action::INIT_INTERVAL);
         }
-        tft.drawString("Mode: INTERVAL", 20, 20, 2);
+        // Update rotating config display
+        displayConfiguration(state);
     }
     else
     {

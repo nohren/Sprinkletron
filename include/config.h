@@ -88,3 +88,4 @@ void safeSleepSeconds(uint32_t seconds); // for testing purposes, sleeps for a n
 uint32_t totalActivations(float tankCapacityGallons, float gph, uint32_t waterIntervalMs);
 void setState(SharedState& s, Action a);
 void printConfiguration(SharedState& s);
+void displayConfiguration(SharedState& s);

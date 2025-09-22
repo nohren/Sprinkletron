@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <TFT_eSPI.h>
 #include "config.h"
 #include "Buttons.h"
 #include "Intervals.h"
@@ -202,5 +203,125 @@ void pump(SharedState& s)
 #endif
         digitalWrite(LED_BUILTIN, LOW);
         digitalWrite(PIN_LED_LARGE, LOW);
+    }
+}
+
+// Use the TFT in main.cpp
+extern TFT_eSPI tft;
+
+// Cycles through configuration display items every 3 seconds in large font
+void displayConfiguration(SharedState& s)
+{
+    static uint8_t itemIndex = 0;
+    static uint32_t lastSwitchMs = 0;
+    const uint32_t DISPLAY_INTERVAL_MS = 3000;
+
+    const bool firstRun = (lastSwitchMs == 0);
+    const bool timeToAdvance = (!firstRun && (millis() - lastSwitchMs >= DISPLAY_INTERVAL_MS));
+
+    // Determine how many items are in the current mode
+    uint8_t numItems = (s.mode == Mode::INTERVAL) ? 6 : 4; // total items per mode
+
+    if (firstRun || timeToAdvance)
+    {
+        if (timeToAdvance)
+        {
+            itemIndex = (itemIndex + 1) % numItems;
+        }
+        lastSwitchMs = millis();
+
+        // Prepare screen
+        tft.fillScreen(TFT_BLACK);
+        tft.setTextColor(TFT_WHITE, TFT_BLACK);
+        tft.setTextDatum(MC_DATUM); // middle-center for easy centering
+
+        // Choose fonts: 4 for title, 6 for value (both are loaded in Setup25)
+        const int titleFont = 4;
+        const int valueFont = 6;
+
+        String title;
+        String value;
+
+        if (s.mode == Mode::INTERVAL)
+        {
+            switch (itemIndex)
+            {
+            case 0:
+                title = "Mode";
+                value = "INTERVAL";
+                break;
+            case 1:
+                title = "Water Interval (min)";
+                value = String(s.waterTime / 60000.0f, 2);
+                break;
+            case 2:
+                title = "Tank Capacity (gal)";
+                value = String(s.tankCapacityGallons, 2);
+                break;
+            case 3:
+                title = "GPH Total";
+                value = String(s.GPHTotal, 2);
+                break;
+            case 4:
+                title = "Activations";
+                value = String(s.activations);
+                break;
+            case 5:
+                title = "Max Activations";
+                value = String(s.maxActivations);
+                break;
+            }
+        }
+        else if (s.mode == Mode::MONITOR) // Mode::MONITOR
+        {
+            switch (itemIndex)
+            {
+            case 0:
+                title = "Mode";
+                value = "MONITOR";
+                break;
+            case 1:
+                title = "Min Moisture Thresh";
+                value = String(MIN_MOISTURE_THRESHOLD, 2);
+                break;
+            case 2:
+                title = "Max Moisture Thresh";
+                value = String(MAX_MOISTURE_THRESHOLD, 2);
+                break;
+            case 3:
+                title = "Monitor Freq (min)";
+                value = String(s.sleepTime / 60000.0f, 2);
+                break;
+            }
+        } else if (s.mode == Mode::INIT) {
+            switch (itemIndex) {
+                case 0:
+                    title = "Mode";
+                    value = "INIT";
+                    break;
+            }
+        } else {
+            switch (itemIndex) {
+                case 0:
+                    title = "Mode";
+                    value = "UNKNOWN";
+                    break;
+            }
+        }
+
+        // Compute positions (landscape 240x135 when rotation=1)
+        const int16_t screenW = tft.width();
+        const int16_t screenH = tft.height();
+
+        const int16_t titleH = tft.fontHeight(titleFont);
+        const int16_t valueH = tft.fontHeight(valueFont);
+
+        const int16_t centerX = screenW / 2;
+        // Place title roughly at 1/3 height, value at 2/3
+        const int16_t titleY = (screenH / 2) - (titleH / 2) - 10;
+        const int16_t valueY = titleY + titleH + 16;
+
+        tft.drawString(title, centerX, titleY, titleFont);
+        tft.drawString(value, centerX, valueY, valueFont);
     }
 }
