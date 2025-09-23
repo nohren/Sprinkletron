@@ -246,6 +246,14 @@ void displayConfiguration(SharedState& s)
 
         String title;
         String value;
+        auto fmt = [&](float v) -> String {
+            int decimals = 2;
+            float a = v < 0 ? -v : v;
+            if (a < 0.1f) decimals = 4; else if (a < 1.0f) decimals = 3;
+            char buf[24];
+            dtostrf(v, 0, decimals, buf);
+            return String(buf);
+        };
 
         if (s.mode == Mode::INTERVAL)
         {
@@ -257,11 +265,11 @@ void displayConfiguration(SharedState& s)
                 break;
             case 1:
                 title = "Sleep (days)";
-                value = String(s.sleepTime / (24.0f * 3600000.0f), 2);
+                value = fmt(s.sleepTime / (24.0f * 3600000.0f));
                 break;
             case 2:
                 title = "Water Interval (min)";
-                value = String(s.waterTime / 60000.0f, 2);
+                value = fmt(s.waterTime / 60000.0f);
                 break;
             case 3:
                 title = "Tank Capacity (gal)";
@@ -392,7 +400,9 @@ void initMode(SharedState& s) {
             int16_t rowY = y + visRow * rowH;
             tft.drawString(label, margin, rowY, valueFont);
             char buf[32];
-            dtostrf(value, 0, 2, buf);
+            int decimals = 2; float av = value < 0 ? -value : value;
+            if (av < 0.1f) decimals = 4; else if (av < 1.0f) decimals = 3;
+            dtostrf(value, 0, decimals, buf);
             String valStr = String(buf);
             int16_t valX = margin + colLabelW;
             tft.drawString(valStr, valX, rowY, valueFont);
