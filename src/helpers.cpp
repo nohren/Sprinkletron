@@ -376,6 +376,9 @@ void initMode(SharedState& s) {
     if (s.GPHTotal <= 0.0f) s.GPHTotal = GPH_TOTAL;
     if (s.waterTime == 0) s.waterTime = WATER_MS; // may be 0; user sets
     if (s.sleepTime == 0) s.sleepTime = SLEEP_MS;
+    // Serial.println("Sleep MS: " + String(SLEEP_MS));
+    // Serial.println("Sleep Time: " + String(s.sleepTime));
+   
 
     // Layout constants (landscape 240x135 typical)
     const int16_t margin = 8;
@@ -499,7 +502,7 @@ void initMode(SharedState& s) {
             } else if (selectedIndex == 2) {
                 float waterMinutes = s.waterTime / 60000.0f;
                 waterMinutes += 0.5f * dir;
-                if (waterMinutes < 0.0f) waterMinutes = 0.0f;
+                if (waterMinutes < 1.0f) waterMinutes = 1.0f;
                 if (waterMinutes > 240.0f) waterMinutes = 240.0f;
                 s.waterTime = (uint32_t)(waterMinutes * 60000.0f);
                 first = true;

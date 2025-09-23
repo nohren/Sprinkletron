@@ -5,10 +5,10 @@
 
 // ---- Pin map
 #define PIN_SOIL_ADC 36   // sensor analog out -> ESP32 GPIO36
-#define PIN_SENSOR_PWR 37 // drives a transistor/high-side switch to power the sensor
+#define PIN_SENSOR_PWR 27 // drives a transistor/high-side switch to power the sensor
 #define PIN_PUMP_GATE 21  // goes to MOSFET gate that switches the pump
 #define PIN_BUTTON 27     // push button to toggle pump on/off
-#define PIN_LED_LARGE 38
+#define PIN_LED_LARGE 25
 #define PIN_JOY_X 39      // joystick VRx -> ADC capable pin (input only OK)
 #define PIN_JOY_Y 32      // joystick VRy -> ADC capable pin (input only OK)
 #define PIN_JOY_SW 33     // joystick switch (digital), active LOW with pull-up
@@ -20,8 +20,8 @@
 // interval mode settings
 static const float GPH_TOTAL = 4; // total gallon per hour heads on the line if using rainbird GPH heads
 static const float TANK_CAPACITY_GALLONS = 2.905; //11 liter tank has 2.905 gallons
-static const uint16_t WATER_MINUTES = 0.5;
-static const uint16_t SLEEP_DAYS = 1/24 * 1/60;
+static const uint16_t WATER_MINUTES = 1;
+static constexpr float SLEEP_DAYS = 1.0/(24*60); // for testing 1.0/(24*60);
 // test off for 1 min, then on for half a min
 
 // monitor mode settings
@@ -43,7 +43,8 @@ static const uint32_t SOFTSTART_MS = 300;       // 0.3s kick
 // --------  USED INTERNALLY - DO NOT CHANGE -------------
 static const uint64_t SLEEP_US = SLEEP_HOURS * 60UL * 60UL * 1000000UL;//hoursToMicros(SLEEP_HOURS);
 static const uint32_t WATER_MS = WATER_MINUTES * 60UL * 1000UL;//minutesToMillis(WATER_MINUTES);
-static const uint32_t SLEEP_MS = SLEEP_DAYS * 24UL * 60UL * 60UL * 1000UL;//daysToMillis(SLEEP_DAYS);
+constexpr uint32_t SLEEP_MS = static_cast<uint32_t>(SLEEP_DAYS * 24UL * 60UL * 60UL * 1000UL);
+// static const uint32_t SLEEP_MS = SLEEP_DAYS * 24UL * 60UL * 60UL * 1000UL;//daysToMillis(SLEEP_DAYS);
 static const uint32_t MAX_PUMP_TIME_MS = MAX_PUMP_TIME_SECONDS * 1000UL;//secondsToMillis(MAX_PUMP_TIME_SECONDS);
 
 // Joystick thresholds (12-bit ADC 0..4095)
