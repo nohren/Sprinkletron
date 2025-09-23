@@ -489,14 +489,14 @@ void initMode(SharedState& s) {
             } else if (selectedIndex == 2) {
                 float waterMinutes = s.waterTime / 60000.0f;
                 waterMinutes += 0.5f * dir;
-                if (waterMinutes < 0.5f) waterMinutes = 0.5f;
+                if (waterMinutes < 0.0f) waterMinutes = 0.0f;
                 if (waterMinutes > 240.0f) waterMinutes = 240.0f;
                 s.waterTime = (uint32_t)(waterMinutes * 60000.0f);
                 first = true;
             } else if (selectedIndex == 3) {
                 float sleepDays = s.sleepTime / (24.0f * 3600000.0f);
                 sleepDays += 1.0f * dir; // adjust in 1-day steps
-                if (sleepDays < 1.0f) sleepDays = 1.0f;
+                if (sleepDays < 0.0f) sleepDays = 0.0f;
                 if (sleepDays > 365.0f) sleepDays = 365.0f;
                 s.sleepTime = (uint32_t)(sleepDays * 24.0f * 3600000.0f);
                 first = true;
