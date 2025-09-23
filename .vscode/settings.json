@@ -1,0 +1,22 @@
+{
+  "files.associations": {
+    "stdbool.h": "c"
+  },
+  // Run the formatter on save
+  "editor.formatOnSave": true,
+  // Only reformat changed lines when supported (nice for large files)
+  // "editor.formatOnSaveMode": "modificationsIfAvailable",
+
+  // Use the C/C++ extension (or clangd) as the default formatter for C/C++
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+
+  // Tell C/C++ to use a .clang-format file from your repo
+  "C_Cpp.clang_format_style": "file"
+  // If clang-format isn't on PATH, set:
+  // "C_Cpp.clang_format_path": "/usr/bin/clang-format"
+}

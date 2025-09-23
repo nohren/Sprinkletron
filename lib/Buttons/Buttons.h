@@ -1,0 +1,1 @@
+bool isButtonReleased(int pin, bool armed = true);

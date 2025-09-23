@@ -39,3 +39,39 @@
 
 # debug information files
 *.dwo
+
+# PlatformIO
+.pio/
+.vscode/
+.DS_Store
+*.pyc
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.su
+*.sbr
+*.idb
+*.pdb
+*.ilk
+*.lib
+*.exp
+*.bak
+*.swp
+*.swo
+*.tmp
+*.log
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+*.vcd
+*.user
+*.code-workspace
+build/
+firmware/
