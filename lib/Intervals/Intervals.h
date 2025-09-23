@@ -1,7 +1,9 @@
 #pragma once
 bool isElapsedMillis(uint32_t startTime, uint32_t interval);
 bool isFlashingMillis(uint32_t startTime, uint32_t flashInterval);
-uint32_t nextWaterMillis(uint32_t stopTime, uint32_t waterInterval);
+uint32_t countdownMillis(uint32_t startMs, uint32_t durationMs);
+String convertMillisToHHMMSS(uint32_t ms);
+String convertMillisToDays(uint32_t ms);
 // constexpr uint32_t daysToMillis(uint16_t days) {
 //     return static_cast<uint32_t>(days) * 24U * 60U * 60U * 1000U;
 // }

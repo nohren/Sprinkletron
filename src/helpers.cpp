@@ -51,7 +51,6 @@ uint32_t totalActivations(float tankCapacityGallons, float gph, uint32_t waterIn
     return (raw > 0.0f) ? (uint32_t)floorf(raw) : 0;
 }
 
-
 void setState(SharedState& s, Action a)
 {
     switch (a)
@@ -216,15 +215,75 @@ void displayConfiguration(SharedState& s)
     static uint8_t itemIndex = 0;
     static uint32_t lastSwitchMs = 0;
     const uint32_t DISPLAY_INTERVAL_MS = 3000;
+    const uint32_t COUNTDOWN_REFRESH_MS = 100U; // 60hz refresh during countdown, 16.6666
+    static bool prevPump = false;
+    static uint32_t lastCountdownDrawMs = millis(); //use static to avoid reinitializing
+    static int16_t countdownValueX = 0, countdownValueY = 0;
+    static int countdownValueFont = 4;
 
     const bool firstRun = (lastSwitchMs == 0);
-    const bool timeToAdvance = (!firstRun && (millis() - lastSwitchMs >= DISPLAY_INTERVAL_MS));
+    bool timeToAdvance = (!firstRun && (millis() - lastSwitchMs >= DISPLAY_INTERVAL_MS));
 
-    // Determine how many items are in the current mode
-    uint8_t numItems = (s.mode == Mode::INTERVAL) ? 7 : (s.mode == Mode::MONITOR) ? 4 : 1; // total items per mode
+    // DON'T ROTATE WHILE SHOWING COUNTDOWN
+    // ENTER here to draw the screen
+    // near top (once per function, outside inner blocks
 
+// entering watering: draw static layout once
+if (s.pumpRunning) {
+
+    if (!prevPump) {
+        Serial.println("Drawing screen prep");
+        tft.fillScreen(TFT_BLACK);
+        tft.setTextColor(tft.color565(0, 255, 65), TFT_BLACK);
+        tft.setTextWrap(false);
+        tft.setTextDatum(TL_DATUM);
+
+        const int titleFont = 4;
+        const int valueFont = 4;
+        const int16_t screenW = tft.width();
+        const int16_t screenH = tft.height();
+        const int16_t marginX = 8;
+        const int16_t marginY = 8;
+        const int16_t titleY = marginY + (screenH / 6);
+        tft.drawString("Watering:", marginX, titleY, titleFont);
+
+        String ref = "00:00";
+        countdownValueY = titleY + tft.fontHeight(titleFont) + 12;   // <-- valueY
+        countdownValueX = (screenW - tft.textWidth(ref, countdownValueFont)) / 2;
+        if (countdownValueX < 0) countdownValueX = 0;
+        lastCountdownDrawMs = 0; // force immediate update
+        lastSwitchMs = 0;
+    }
+
+    // only update the time text while watering, at a fixed cadence
+    if (millis() - lastCountdownDrawMs >= COUNTDOWN_REFRESH_MS) {
+        uint32_t remaining = countdownMillis(s.pumpStartTime, s.waterTime); // in milliseconds
+        // conver to minutes and seconds
+        uint32_t min = remaining / 60000;
+        uint32_t sec = (remaining % 60000) / 1000;
+        // Serial.println("minutes: " + String(min));
+        // Serial.println("seconds: " + String(sec));    
+        char buf[8];
+        snprintf(buf, sizeof(buf), "%02u:%02u", min, sec);
+
+        // redraw only the value text, not the whole screen
+        const int valueFont = 4;
+        int16_t valueY = countdownValueY;
+        int16_t valueX = countdownValueX;
+        tft.drawString(buf, valueX, valueY, countdownValueFont);
+
+        lastCountdownDrawMs = millis();
+    }
+    prevPump = true;
+
+} else {
+    prevPump = false;
     if (firstRun || timeToAdvance)
     {
+        Serial.println("Drawing screen");
+        lastCountdownDrawMs = millis();
+        // Determine how many items are in the current mode
+        uint8_t numItems = (s.mode == Mode::INTERVAL) ? 7 : (s.mode == Mode::MONITOR) ? 4 : 1; // total items per mode
         if (timeToAdvance)
         {
             itemIndex = (itemIndex + 1) % numItems;
@@ -254,78 +313,86 @@ void displayConfiguration(SharedState& s)
             dtostrf(v, 0, decimals, buf);
             return String(buf);
         };
-
-        if (s.mode == Mode::INTERVAL)
-        {
-            switch (itemIndex)
+            if (s.mode == Mode::INTERVAL)
             {
-            case 0:
-                title = "Mode";
-                value = "INTERVAL";
-                break;
-            case 1:
-                uint32_t nextWaterMillis = nextWaterMillis(s.pumpStopTime, s.waterTime);
-                title = "Next Water (days)";
-                value = fmt(nextWaterMillis / (24.0f * 3600000.0f));
-                break;
-            case 2:
-                title = "Water Interval (min)";
-                value = fmt(s.waterTime / 60000.0f);
-                break;
-            case 3:
-                title = "Tank Capacity (gal)";
-                value = String(s.tankCapacityGallons, 2);
-                break;
-            case 4:
-                title = "GPH Total";
-                value = String(s.GPHTotal, 2);
-                break;
-            case 5:
-                title = "Activations";
-                value = String(s.activations);
-                break;
-            case 6:
-                title = "Max Activations";
-                value = String(s.maxActivations);
-                break;
-            }
-        }
-        else if (s.mode == Mode::MONITOR) // Mode::MONITOR
-        {
-            switch (itemIndex)
-            {
-            case 0:
-                title = "Mode";
-                value = "MONITOR";
-                break;
-            case 1:
-                title = "Min Moisture Thresh";
-                value = String(MIN_MOISTURE_THRESHOLD, 2);
-                break;
-            case 2:
-                title = "Max Moisture Thresh";
-                value = String(MAX_MOISTURE_THRESHOLD, 2);
-                break;
-            case 3:
-                title = "Monitor Freq (min)";
-                value = String(s.sleepTime / 60000.0f, 2);
-                break;
-            }
-        } else if (s.mode == Mode::INIT) {
-            switch (itemIndex) {
+                switch (itemIndex)
+                {
                 case 0:
                     title = "Mode";
-                    value = "INIT";
+                    value = "INTERVAL";
                     break;
+                case 1:
+                    {
+                        title = "Next Water";
+                        uint32_t rem = countdownMillis(s.pumpStopTime, s.sleepTime);
+                        // Serial.println("remaining: " + String(rem));
+                        // float days = rem / (24.0f * 3600000.0f);
+                        if (rem >= 86400000) {
+                            value = convertMillisToDays(rem);
+                        } else {
+                            value = convertMillisToHHMMSS(rem);
+                        }
+                    }
+                    break;
+                case 2:
+                    title = "Water Interval (min)";
+                    value = fmt(s.waterTime / 60000.0f);
+                    break;
+                case 3:
+                    title = "Tank Capacity (gal)";
+                    value = String(s.tankCapacityGallons, 2);
+                    break;
+                case 4:
+                    title = "GPH Total";
+                    value = String(s.GPHTotal, 2);
+                    break;
+                case 5:
+                    title = "Activations";
+                    value = String(s.activations);
+                    break;
+                case 6:
+                    title = "Max Activations";
+                    value = String(s.maxActivations);
+                    break;
+                }
             }
-        } else {
-            switch (itemIndex) {
+            else if (s.mode == Mode::MONITOR) // Mode::MONITOR
+            {
+                switch (itemIndex)
+                {
                 case 0:
                     title = "Mode";
-                    value = "UNKNOWN";
+                    value = "MONITOR";
                     break;
+                case 1:
+                    title = "Min Moisture Thresh";
+                    value = String(MIN_MOISTURE_THRESHOLD, 2);
+                    break;
+                case 2:
+                    title = "Max Moisture Thresh";
+                    value = String(MAX_MOISTURE_THRESHOLD, 2);
+                    break;
+                case 3:
+                    title = "Monitor Freq (min)";
+                    value = String(s.sleepTime / 60000.0f, 2);
+                    break;
+                }
+            } else if (s.mode == Mode::INIT) {
+                switch (itemIndex) {
+                    case 0:
+                        title = "Mode";
+                        value = "INIT";
+                        break;
+                }
+            } else {
+                switch (itemIndex) {
+                    case 0:
+                        title = "Mode";
+                        value = "UNKNOWN";
+                        break;
+                }
             }
-        }
+        
 
         // Compute positions (landscape 240x135 when rotation=1)
         const int16_t screenW = tft.width();
@@ -347,6 +414,8 @@ void displayConfiguration(SharedState& s)
         tft.drawString(title + ":", titleX, titleY, titleFont);
         tft.drawString(value, valueX, valueY, valueFont);
     }
+    // normal rotation path (firstRun || timeToAdvance) ...
+}
 }
 
 // // Use the TFT in main.cpp

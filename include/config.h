@@ -18,11 +18,11 @@
 #define TFT_BL 4  
 
 // interval mode settings
-static const float GPH_TOTAL = 4; // total gallon per hour heads on the line if using rainbird GPH heads
+static const float GPH_TOTAL = 4; // total galldon per hour heads on the line if using rainbird GPH heads
 static const float TANK_CAPACITY_GALLONS = 2.905; //11 liter tank has 2.905 gallons
 static const uint16_t WATER_MINUTES = 1;
-static constexpr float SLEEP_DAYS = 1.0/(24*60); // for testing 1.0/(24*60);
-// test off for 1 min, then on for half a min
+static constexpr float SLEEP_DAYS = 1.0/(24*60);
+// test off for 5 seconds, then on for half a min
 
 // monitor mode settings
 static const float MIN_MOISTURE_THRESHOLD = 2.5;     // // pretty dry... this is an empirically derived sensor voltage value
@@ -104,6 +104,7 @@ void setState(SharedState& s, Action a);
 void printConfiguration(SharedState& s);
 void displayConfiguration(SharedState& s);
 void initMode(SharedState& s); // handle INIT mode UI (touch/button)
+
 
 // Optional: define two UI buttons for INIT navigation. If not provided,
 // they will fall back to PIN_BUTTON and single-button behavior.
