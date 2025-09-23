@@ -1,3 +1,4 @@
+#ifdef ESP32
 #include <Arduino.h>
 #include "config.h"
 #include "MoistureSensor.h"
@@ -94,3 +95,4 @@ void sampleSoil(SharedState& s, bool verbose)
     //     }
     // }
 }
+#endif

@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <TFT_eSPI.h>
 #include "config.h"
 #include "Buttons.h"
 #include "Intervals.h"
 #ifdef ESP32
+#include <TFT_eSPI.h>
 #include <esp_sleep.h>
 #include "Pwm.h"
 // Call this instead of inlining sleep logic
@@ -36,10 +36,10 @@ void safeSleepSeconds(uint32_t seconds)
     esp_sleep_enable_timer_wakeup(us);
     esp_deep_sleep_start();
 }
+extern TFT_eSPI tft;
 #endif
 
 // Use the TFT in main.cpp
-extern TFT_eSPI tft;
 
 uint32_t totalActivations(float tankCapacityGallons, float gph, uint32_t waterIntervalMs) {
     if (gph <= 0.0f || waterIntervalMs == 0) return 0;
@@ -187,22 +187,22 @@ void pump(SharedState& s)
 {
     if (s.pumpRunning)
     {
-#ifdef ESP32
-        drivePump(true, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
-#else
         digitalWrite(PIN_PUMP_GATE, HIGH);
-#endif
+// #ifdef ESP32
+//         drivePump(true, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
+// #else
+// #endif
 
         digitalWrite(LED_BUILTIN, HIGH);
         digitalWrite(PIN_LED_LARGE, HIGH);
     }
     else
     {
-#ifdef ESP32
-        drivePump(false, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
-#else
         digitalWrite(PIN_PUMP_GATE, LOW);
-#endif
+// #ifdef ESP32
+//         drivePump(false, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
+// #else
+// #endif
         digitalWrite(LED_BUILTIN, LOW);
         digitalWrite(PIN_LED_LARGE, LOW);
     }
@@ -420,6 +420,14 @@ if (s.pumpRunning) {
 
 // // Use the TFT in main.cpp
 // extern TFT_eSPI tft;
+
+void initModeLight(SharedState& s) {
+    s.tankCapacityGallons = TANK_CAPACITY_GALLONS;
+    s.GPHTotal = GPH_TOTAL;
+    s.waterTime = WATER_MS;
+    s.sleepTime = SLEEP_MS;
+    setState(s, Action::INIT_INTERVAL);
+}
 
 // No-touch joystick-driven INIT screen
 void initMode(SharedState& s) {
