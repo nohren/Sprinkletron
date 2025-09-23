@@ -4,11 +4,14 @@
 // ---- Configuration ---------   Change these to match your setup and preferences
 
 // ---- Pin map
-#define PIN_SOIL_ADC 32   // sensor analog out -> ESP32 GPIO36
-#define PIN_SENSOR_PWR 38 // drives a transistor/high-side switch to power the sensor
+#define PIN_SOIL_ADC 36   // sensor analog out -> ESP32 GPIO36
+#define PIN_SENSOR_PWR 37 // drives a transistor/high-side switch to power the sensor
 #define PIN_PUMP_GATE 21  // goes to MOSFET gate that switches the pump
-#define PIN_BUTTON 15     // push button to toggle pump on/off
-#define PIN_LED_LARGE 12
+#define PIN_BUTTON 27     // push button to toggle pump on/off
+#define PIN_LED_LARGE 38
+#define PIN_JOY_X 39      // joystick VRx -> ADC capable pin (input only OK)
+#define PIN_JOY_Y 32      // joystick VRy -> ADC capable pin (input only OK)
+#define PIN_JOY_SW 33     // joystick switch (digital), active LOW with pull-up
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 2
 #endif
@@ -17,8 +20,9 @@
 // interval mode settings
 static const float GPH_TOTAL = 4; // total gallon per hour heads on the line if using rainbird GPH heads
 static const float TANK_CAPACITY_GALLONS = 2.905; //11 liter tank has 2.905 gallons
-static const uint16_t WATER_MINUTES = 2;
-static const uint16_t SLEEP_DAYS = 5;
+static const uint16_t WATER_MINUTES = 0.5;
+static const uint16_t SLEEP_DAYS = 1/24 * 1/60;
+// test off for 1 min, then on for half a min
 
 // monitor mode settings
 static const float MIN_MOISTURE_THRESHOLD = 2.5;     // // pretty dry... this is an empirically derived sensor voltage value
@@ -37,9 +41,18 @@ static const uint8_t MIN_RUN_PCT = 55;
 static const uint32_t SOFTSTART_MS = 300;       // 0.3s kick
 
 // --------  USED INTERNALLY - DO NOT CHANGE -------------
-static const uint64_t SLEEP_US = 0;//hoursToMicros(SLEEP_HOURS);
-static const uint32_t WATER_MS = 0;//minutesToMillis(WATER_MINUTES);
-static const uint32_t MAX_PUMP_TIME_MS = 0;//secondsToMillis(MAX_PUMP_TIME_SECONDS);
+static const uint64_t SLEEP_US = SLEEP_HOURS * 60UL * 60UL * 1000000UL;//hoursToMicros(SLEEP_HOURS);
+static const uint32_t WATER_MS = WATER_MINUTES * 60UL * 1000UL;//minutesToMillis(WATER_MINUTES);
+static const uint32_t SLEEP_MS = SLEEP_DAYS * 24UL * 60UL * 60UL * 1000UL;//daysToMillis(SLEEP_DAYS);
+static const uint32_t MAX_PUMP_TIME_MS = MAX_PUMP_TIME_SECONDS * 1000UL;//secondsToMillis(MAX_PUMP_TIME_SECONDS);
+
+// Joystick thresholds (12-bit ADC 0..4095)
+static const uint16_t JOY_LOW = 1100;
+static const uint16_t JOY_HIGH = 3000;
+static const uint16_t JOY_DEADZONE = 300;
+static const uint32_t JOY_FIRST_REPEAT_MS = 400;
+static const uint32_t JOY_NEXT_REPEAT_MS = 150;
+static const uint32_t JOY_LONG_PRESS_MS = 600;
 
 enum class Action
 {
@@ -89,3 +102,13 @@ uint32_t totalActivations(float tankCapacityGallons, float gph, uint32_t waterIn
 void setState(SharedState& s, Action a);
 void printConfiguration(SharedState& s);
 void displayConfiguration(SharedState& s);
+void initMode(SharedState& s); // handle INIT mode UI (touch/button)
+
+// Optional: define two UI buttons for INIT navigation. If not provided,
+// they will fall back to PIN_BUTTON and single-button behavior.
+#ifndef PIN_BUTTON_LEFT
+#define PIN_BUTTON_LEFT PIN_BUTTON
+#endif
+#ifndef PIN_BUTTON_RIGHT
+#define PIN_BUTTON_RIGHT PIN_BUTTON
+#endif

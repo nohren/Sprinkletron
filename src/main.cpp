@@ -19,6 +19,17 @@ void setup()
     // Initialize GPIO for LED, button, and pump
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(PIN_BUTTON, INPUT_PULLUP);
+    // Optional dual buttons for INIT nav
+    pinMode(PIN_BUTTON_LEFT, INPUT_PULLUP);
+    pinMode(PIN_BUTTON_RIGHT, INPUT_PULLUP);
+
+    // Joystick setup
+    pinMode(PIN_JOY_SW, INPUT_PULLUP);
+#ifdef ESP32
+    analogReadResolution(12);
+    analogSetPinAttenuation(PIN_JOY_X, ADC_11db);
+    analogSetPinAttenuation(PIN_JOY_Y, ADC_11db);
+#endif
     pinMode(PIN_PUMP_GATE, OUTPUT);
     pinMode(PIN_LED_LARGE, OUTPUT);
 
@@ -29,7 +40,7 @@ void setup()
     tft.init();                    // requires correct Setup25
     tft.setRotation(1);
     tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextColor(tft.color565(0, 255, 65), TFT_BLACK); // Malachite green
     // Init state
     setState(state, Action::INIT_SETUP);
 
@@ -76,15 +87,7 @@ void setup()
 void loop()
 {
     if (state.mode == Mode::INIT) {
-        // replace with user inputs values here
-        // state.tankCapacityGallons = TANK_CAPACITY_GALLONS;
-        // state.GPHTotal = GPH_TOTAL;
-        // state.waterTime = minutesToMillis(WATER_MINUTES);
-        if (state.tankCapacityGallons > 0 && state.GPHTotal > 0 && state.waterTime > 0) {
-            setState(state, Action::INIT_INTERVAL);
-        }
-        // Update rotating config display
-        displayConfiguration(state);
+        initMode(state);
     }
     else
     {
@@ -98,5 +101,6 @@ void loop()
         }
         button(state);
         pump(state);
+        displayConfiguration(state);
     }
 }

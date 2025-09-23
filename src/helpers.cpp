@@ -38,6 +38,9 @@ void safeSleepSeconds(uint32_t seconds)
 }
 #endif
 
+// Use the TFT in main.cpp
+extern TFT_eSPI tft;
+
 uint32_t totalActivations(float tankCapacityGallons, float gph, uint32_t waterIntervalMs) {
     if (gph <= 0.0f || waterIntervalMs == 0) return 0;
 
@@ -61,8 +64,8 @@ void setState(SharedState& s, Action a)
         s.mode = Mode::INTERVAL;
         s.pumpStopTime = millis();
         s.maxActivations = totalActivations(s.tankCapacityGallons, s.GPHTotal, s.waterTime);
-        Serial.print("Activation limit: ");
-        Serial.println(s.maxActivations);
+        printConfiguration(s);
+        break;
     case Action::INIT_MONITOR:
         s.mode = Mode::MONITOR;
         s.pumpRunning = false;
@@ -206,8 +209,6 @@ void pump(SharedState& s)
     }
 }
 
-// Use the TFT in main.cpp
-extern TFT_eSPI tft;
 
 // Cycles through configuration display items every 3 seconds in large font
 void displayConfiguration(SharedState& s)
@@ -220,7 +221,7 @@ void displayConfiguration(SharedState& s)
     const bool timeToAdvance = (!firstRun && (millis() - lastSwitchMs >= DISPLAY_INTERVAL_MS));
 
     // Determine how many items are in the current mode
-    uint8_t numItems = (s.mode == Mode::INTERVAL) ? 6 : (s.mode == Mode::MONITOR) ? 4 : 1; // total items per mode
+    uint8_t numItems = (s.mode == Mode::INTERVAL) ? 7 : (s.mode == Mode::MONITOR) ? 4 : 1; // total items per mode
 
     if (firstRun || timeToAdvance)
     {
@@ -229,13 +230,13 @@ void displayConfiguration(SharedState& s)
             itemIndex = (itemIndex + 1) % numItems;
         }
         lastSwitchMs = millis();
-        Serial.println("Displaying configuration...");
-        Serial.println(itemIndex);
-        Serial.println(numItems);
+        // Serial.println("Displaying configuration...");
+        // Serial.println(itemIndex);
+        // Serial.println(numItems);
 
         // Prepare screen
         tft.fillScreen(TFT_BLACK);
-        tft.setTextColor(TFT_WHITE, TFT_BLACK);
+        tft.setTextColor(tft.color565(0, 255, 65), TFT_BLACK);
         tft.setTextWrap(false);
         tft.setTextDatum(TL_DATUM); // draw from top-left to avoid baseline/datum surprises
 
@@ -255,22 +256,26 @@ void displayConfiguration(SharedState& s)
                 value = "INTERVAL";
                 break;
             case 1:
+                title = "Sleep (days)";
+                value = String(s.sleepTime / (24.0f * 3600000.0f), 2);
+                break;
+            case 2:
                 title = "Water Interval (min)";
                 value = String(s.waterTime / 60000.0f, 2);
                 break;
-            case 2:
+            case 3:
                 title = "Tank Capacity (gal)";
                 value = String(s.tankCapacityGallons, 2);
                 break;
-            case 3:
+            case 4:
                 title = "GPH Total";
                 value = String(s.GPHTotal, 2);
                 break;
-            case 4:
+            case 5:
                 title = "Activations";
                 value = String(s.activations);
                 break;
-            case 5:
+            case 6:
                 title = "Max Activations";
                 value = String(s.maxActivations);
                 break;
@@ -333,4 +338,201 @@ void displayConfiguration(SharedState& s)
         tft.drawString(title + ":", titleX, titleY, titleFont);
         tft.drawString(value, valueX, valueY, valueFont);
     }
+}
+
+// // Use the TFT in main.cpp
+// extern TFT_eSPI tft;
+
+// No-touch joystick-driven INIT screen
+void initMode(SharedState& s) {
+    static bool first = true;
+    static uint32_t lastUiMs = 0;
+    const uint32_t UI_REDRAW_MS = 200; // responsive
+
+    static uint8_t selectedIndex = 0; // 0 Tank, 1 GPH, 2 Water(min), 3 Sleep(days), 4 Start
+    static uint32_t lastRepeatMs = 0;
+    static bool repeating = false;
+    static uint8_t topIndex = 0; // first visible item in the viewport
+
+    static bool swPrev = false;
+    static uint32_t swPressMs = 0;
+
+    // Center calibration
+    static bool centerReady = false;
+    static uint32_t centerAccumX = 0, centerAccumY = 0;
+    static uint16_t centerX = 2048, centerY = 2048;
+    static uint8_t centerSamples = 0;
+
+    // Initialize defaults once if zeroed
+    if (s.tankCapacityGallons <= 0.0f) s.tankCapacityGallons = TANK_CAPACITY_GALLONS;
+    if (s.GPHTotal <= 0.0f) s.GPHTotal = GPH_TOTAL;
+    if (s.waterTime == 0) s.waterTime = WATER_MS; // may be 0; user sets
+    if (s.sleepTime == 0) s.sleepTime = SLEEP_MS;
+
+    // Layout constants (landscape 240x135 typical)
+    const int16_t margin = 8;
+    const int16_t rowH = 36;
+    const int16_t colLabelW = 120;
+
+    if (first || (millis() - lastUiMs) > UI_REDRAW_MS) {
+        first = false;
+        lastUiMs = millis();
+        tft.fillScreen(TFT_BLACK);
+        tft.setTextColor(tft.color565(0, 255, 65), TFT_BLACK);
+        tft.setTextWrap(false);
+        tft.setTextDatum(TL_DATUM);
+
+        const int titleFont = 4;
+        const int valueFont = 2;
+        int16_t y = margin;
+        tft.drawString("Setup: Interval Mode", margin, y, titleFont);
+        y += 24 + margin;
+
+        auto drawValueRow = [&](const char* label, float value, int visRow, bool selected) {
+            int16_t rowY = y + visRow * rowH;
+            tft.drawString(label, margin, rowY, valueFont);
+            char buf[32];
+            dtostrf(value, 0, 2, buf);
+            String valStr = String(buf);
+            int16_t valX = margin + colLabelW;
+            tft.drawString(valStr, valX, rowY, valueFont);
+            if (selected) {
+                tft.drawString("<", valX - 12, rowY, valueFont);
+                int16_t rightX = valX + tft.textWidth(valStr, valueFont) + 4;
+                tft.drawString(">", rightX, rowY, valueFont);
+            }
+        };
+
+        const uint8_t totalItems = 5;
+        const uint8_t maxVisible = 3;
+        uint8_t visibleRows = (totalItems - topIndex) < maxVisible ? (totalItems - topIndex) : maxVisible;
+
+        for (uint8_t i = 0; i < visibleRows; i++) {
+            uint8_t item = topIndex + i;
+            bool selected = (item == selectedIndex);
+            switch (item) {
+                case 0: drawValueRow("Tank (gal)", s.tankCapacityGallons, i, selected); break;
+                case 1: drawValueRow("GPH Total", s.GPHTotal, i, selected); break;
+                case 2: drawValueRow("Water (min)", s.waterTime / 60000.0f, i, selected); break;
+                case 3: drawValueRow("Sleep (days)", s.sleepTime / (24.0f * 3600000.0f), i, selected); break;
+                case 4: {
+                    int16_t rowY = y + i * rowH;
+                    tft.drawString(selected ? "> Start Interval <" : "Start Interval", margin, rowY, valueFont);
+                } break;
+            }
+        }
+    }
+
+    // Read joystick
+    uint16_t rx = analogRead(PIN_JOY_X);
+    uint16_t ry = analogRead(PIN_JOY_Y);
+    bool swPressed = (digitalRead(PIN_JOY_SW) == LOW);
+
+    // Calibrate center when near center to avoid skew
+    if (!centerReady) {
+        if (abs((int)rx - (int)centerX) < 800 && abs((int)ry - (int)centerY) < 800) {
+            centerAccumX += rx;
+            centerAccumY += ry;
+            centerSamples++;
+            if (centerSamples >= 16) {
+                centerX = (uint16_t)(centerAccumX / centerSamples);
+                centerY = (uint16_t)(centerAccumY / centerSamples);
+                centerReady = true;
+            }
+        }
+    }
+
+    int dx = (int)rx - (int)centerX;
+    int dy = (int)ry - (int)centerY;
+    int adx = abs(dx);
+    int ady = abs(dy);
+
+    const int dead = 500;      // deadzone (try 400–600)
+    const float bias = 1.2f;   // dominance bias to reject diagonals
+
+    bool horiz = (adx > dead) && (adx > (int)(ady * bias));
+    bool vert  = (ady > dead) && (ady > (int)(adx * bias));
+
+    // Vertical navigation (dominant axis)
+    if (vert) {
+        bool isUp = (dy < 0);
+        if (!repeating || (millis() - lastRepeatMs >= JOY_NEXT_REPEAT_MS)) {
+            if (!repeating) lastRepeatMs = millis() + JOY_FIRST_REPEAT_MS - JOY_NEXT_REPEAT_MS;
+            repeating = true;
+            selectedIndex = isUp ? (selectedIndex == 0 ? 4 : (uint8_t)(selectedIndex - 1))
+                                 : (uint8_t)((selectedIndex + 1) % 5);
+            // keep selection within viewport
+            const uint8_t maxVisible = 3;
+            if (selectedIndex < topIndex) topIndex = selectedIndex;
+            if (selectedIndex >= topIndex + maxVisible) topIndex = selectedIndex - (maxVisible - 1);
+            first = true;
+            lastRepeatMs = millis();
+        }
+    }
+    // Horizontal adjustment (dominant axis)
+    else if (horiz) {
+        bool isRight = (dx > 0);
+        if (!repeating || (millis() - lastRepeatMs >= JOY_NEXT_REPEAT_MS)) {
+            if (!repeating) lastRepeatMs = millis() + JOY_FIRST_REPEAT_MS - JOY_NEXT_REPEAT_MS;
+            repeating = true;
+            float dir = isRight ? 1.0f : -1.0f;
+            if (selectedIndex == 0) {
+                s.tankCapacityGallons += 0.1f * dir;
+                if (s.tankCapacityGallons < 0.1f) s.tankCapacityGallons = 0.1f;
+                if (s.tankCapacityGallons > 500.0f) s.tankCapacityGallons = 500.0f;
+                first = true;
+            } else if (selectedIndex == 1) {
+                s.GPHTotal += 0.1f * dir;
+                if (s.GPHTotal < 0.1f) s.GPHTotal = 0.1f;
+                if (s.GPHTotal > 1000.0f) s.GPHTotal = 1000.0f;
+                first = true;
+            } else if (selectedIndex == 2) {
+                float waterMinutes = s.waterTime / 60000.0f;
+                waterMinutes += 0.5f * dir;
+                if (waterMinutes < 0.5f) waterMinutes = 0.5f;
+                if (waterMinutes > 240.0f) waterMinutes = 240.0f;
+                s.waterTime = (uint32_t)(waterMinutes * 60000.0f);
+                first = true;
+            } else if (selectedIndex == 3) {
+                float sleepDays = s.sleepTime / (24.0f * 3600000.0f);
+                sleepDays += 1.0f * dir; // adjust in 1-day steps
+                if (sleepDays < 1.0f) sleepDays = 1.0f;
+                if (sleepDays > 365.0f) sleepDays = 365.0f;
+                s.sleepTime = (uint32_t)(sleepDays * 24.0f * 3600000.0f);
+                first = true;
+            }
+            lastRepeatMs = millis();
+        }
+    } else {
+        repeating = false;
+    }
+
+    // Switch handling: short = next/confirm, long = previous
+    if (swPressed && !swPrev) {
+        swPressMs = millis();
+    }
+    if (!swPressed && swPrev) {
+        uint32_t held = millis() - swPressMs;
+        if (held >= JOY_LONG_PRESS_MS) {
+            selectedIndex = (selectedIndex == 0) ? 4 : (uint8_t)(selectedIndex - 1);
+            const uint8_t maxVisible = 3;
+            if (selectedIndex < topIndex) topIndex = selectedIndex;
+            if (selectedIndex >= topIndex + maxVisible) topIndex = selectedIndex - (maxVisible - 1);
+            first = true;
+        } else {
+            if (selectedIndex == 4) {
+                if (s.tankCapacityGallons > 0.0f && s.GPHTotal > 0.0f && s.waterTime > 0U && s.sleepTime > 0U) {
+                    setState(s, Action::INIT_INTERVAL);
+                    return;
+                }
+            } else {
+                selectedIndex = (selectedIndex + 1) % 5;
+                const uint8_t maxVisible = 3;
+                if (selectedIndex < topIndex) topIndex = selectedIndex;
+                if (selectedIndex >= topIndex + maxVisible) topIndex = selectedIndex - (maxVisible - 1);
+                first = true;
+            }
+        }
+    }
+    swPrev = swPressed;
 }
