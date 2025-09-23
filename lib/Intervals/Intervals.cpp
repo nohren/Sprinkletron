@@ -12,3 +12,8 @@ bool isFlashingMillis(uint32_t startTime, uint32_t flashInterval)
     // else, elapsed, so flash
     return ((millis() - startTime) % flashInterval) < (flashInterval / 2);
 }
+
+uint32_t nextWaterMillis(uint32_t stopTime, uint32_t waterInterval)
+{
+    return waterInterval - (millis() - stopTime);
+}

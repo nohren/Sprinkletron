@@ -264,8 +264,9 @@ void displayConfiguration(SharedState& s)
                 value = "INTERVAL";
                 break;
             case 1:
-                title = "Sleep (days)";
-                value = fmt(s.sleepTime / (24.0f * 3600000.0f));
+                uint32_t nextWaterMillis = nextWaterMillis(s.pumpStopTime, s.waterTime);
+                title = "Next Water (days)";
+                value = fmt(nextWaterMillis / (24.0f * 3600000.0f));
                 break;
             case 2:
                 title = "Water Interval (min)";
