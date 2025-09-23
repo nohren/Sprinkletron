@@ -47,14 +47,30 @@ void setup()
     //print configuration and flash for 10 seconds to show ready
     // no delays after setup, only use timing to avoid blocking and important tasks like button handling
     //printConfiguration(state);
-    for (int i = 0; i < 5; i++) {
-        digitalWrite(LED_BUILTIN, HIGH);
-        digitalWrite(PIN_LED_LARGE, HIGH);
-        delay(1000);
-        digitalWrite(LED_BUILTIN, LOW);
-        digitalWrite(PIN_LED_LARGE, LOW);
-        delay(1000);
-    }
+    // for (int i = 0; i < 2; i++) {
+    //     digitalWrite(LED_BUILTIN, HIGH);
+    //     digitalWrite(PIN_LED_LARGE, HIGH);
+    //     delay(1000);
+    //     digitalWrite(LED_BUILTIN, LOW);
+    //     digitalWrite(PIN_LED_LARGE, LOW);
+    //     delay(1000);
+    // }
+    // for (int i = 0; i < 3; i++) {
+    //     digitalWrite(LED_BUILTIN, HIGH);
+    //     digitalWrite(PIN_LED_LARGE, HIGH);
+    //     delay(500);
+    //     digitalWrite(LED_BUILTIN, LOW);
+    //     digitalWrite(PIN_LED_LARGE, LOW);
+    //     delay(500);
+    // }
+    // for (int i = 0; i < 4; i++) {
+    //     digitalWrite(LED_BUILTIN, HIGH);
+    //     digitalWrite(PIN_LED_LARGE, HIGH);
+    //     delay(250);
+    //     digitalWrite(LED_BUILTIN, LOW);
+    //     digitalWrite(PIN_LED_LARGE, LOW);
+    //     delay(250);
+    // }
 }
 
 void loop()

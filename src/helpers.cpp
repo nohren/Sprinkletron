@@ -220,7 +220,7 @@ void displayConfiguration(SharedState& s)
     const bool timeToAdvance = (!firstRun && (millis() - lastSwitchMs >= DISPLAY_INTERVAL_MS));
 
     // Determine how many items are in the current mode
-    uint8_t numItems = (s.mode == Mode::INTERVAL) ? 6 : 4; // total items per mode
+    uint8_t numItems = (s.mode == Mode::INTERVAL) ? 6 : (s.mode == Mode::MONITOR) ? 4 : 1; // total items per mode
 
     if (firstRun || timeToAdvance)
     {
@@ -229,15 +229,19 @@ void displayConfiguration(SharedState& s)
             itemIndex = (itemIndex + 1) % numItems;
         }
         lastSwitchMs = millis();
+        Serial.println("Displaying configuration...");
+        Serial.println(itemIndex);
+        Serial.println(numItems);
 
         // Prepare screen
         tft.fillScreen(TFT_BLACK);
         tft.setTextColor(TFT_WHITE, TFT_BLACK);
-        tft.setTextDatum(MC_DATUM); // middle-center for easy centering
+        tft.setTextWrap(false);
+        tft.setTextDatum(TL_DATUM); // draw from top-left to avoid baseline/datum surprises
 
         // Choose fonts: 4 for title, 6 for value (both are loaded in Setup25)
         const int titleFont = 4;
-        const int valueFont = 6;
+        const int valueFont = 4;
 
         String title;
         String value;
@@ -316,12 +320,17 @@ void displayConfiguration(SharedState& s)
         const int16_t titleH = tft.fontHeight(titleFont);
         const int16_t valueH = tft.fontHeight(valueFont);
 
-        const int16_t centerX = screenW / 2;
-        // Place title roughly at 1/3 height, value at 2/3
-        const int16_t titleY = (screenH / 2) - (titleH / 2) - 10;
-        const int16_t valueY = titleY + titleH + 16;
+        const int16_t marginX = 8;
+        const int16_t marginY = 8;
 
-        tft.drawString(title, centerX, titleY, titleFont);
-        tft.drawString(value, centerX, valueY, valueFont);
+        const int16_t titleX = marginX;
+        const int16_t titleY = marginY + (screenH / 6); // a little down from the top
+
+        const int16_t valueY = titleY + titleH + 12;
+        int16_t valueX = (screenW - tft.textWidth(value, valueFont)) / 2;
+        if (valueX < 0) valueX = 0; // clamp to left edge if too wide
+
+        tft.drawString(title + ":", titleX, titleY, titleFont);
+        tft.drawString(value, valueX, valueY, valueFont);
     }
 }
