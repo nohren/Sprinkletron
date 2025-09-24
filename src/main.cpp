@@ -99,12 +99,14 @@ void loop()
         }
         else if (state.mode == Mode::MONITOR)
         {
-            monitorMode(state);
+            //monitorMode(state);
         }
         button(state);
         pump(state);
         #ifdef ESP32
         displayConfiguration(state);
+        #else 
+        printConfiguration(state);
         #endif
     }
 }

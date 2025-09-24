@@ -122,10 +122,15 @@ void button(SharedState& s)
 }
 
 void printConfiguration(SharedState& s) {
+    static uint32_t lastPrintMs = millis();
+    if (isElapsedMillis(lastPrintMs, 5000)) {
+        lastPrintMs = millis();
     if (s.mode == Mode::INTERVAL) {
         Serial.println(" Mode = INTERVAL ");
         Serial.print("  Water Interval (min): ");
         Serial.println(s.waterTime / 60000.0); //ms to minutes
+        Serial.print("  Sleep Time (days): ");
+        Serial.println(s.sleepTime / 86400000.0); //ms to days
         Serial.print("  Tank Capacity (gallons): ");
         Serial.println(s.tankCapacityGallons);
         Serial.print("  GPH Total: ");
@@ -134,6 +139,8 @@ void printConfiguration(SharedState& s) {
         Serial.println(s.activations);
         Serial.print("  Max Activations: ");
         Serial.println(s.maxActivations);
+        Serial.print("  pump state: ");
+        Serial.println(s.pumpRunning);
     }
     else if (s.mode == Mode::MONITOR) {
         Serial.println(" Mode = MONITOR ");
@@ -144,6 +151,7 @@ void printConfiguration(SharedState& s) {
         Serial.print("  Monitor Frequency: ");
         Serial.println(s.sleepTime / 60000.0); // ms to minutes
     }
+}
 }
 // (biz logic) waters at start of interval. Counts activations and stops when limit is reached.
 void intervalMode(SharedState& s) {
@@ -178,20 +186,15 @@ void intervalMode(SharedState& s) {
     }
 }
 
-void monitorMode(SharedState& s)
-{
-    sampleSoil(s, true);
-}
-
 void pump(SharedState& s)
 {
     if (s.pumpRunning)
     {
         digitalWrite(PIN_PUMP_GATE, HIGH);
-// #ifdef ESP32
-//         drivePump(true, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
-// #else
-// #endif
+#ifdef ESP32
+        drivePump(true, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
+#else
+#endif
 
         digitalWrite(LED_BUILTIN, HIGH);
         digitalWrite(PIN_LED_LARGE, HIGH);
@@ -199,16 +202,30 @@ void pump(SharedState& s)
     else
     {
         digitalWrite(PIN_PUMP_GATE, LOW);
-// #ifdef ESP32
-//         drivePump(false, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
-// #else
-// #endif
+#ifdef ESP32
+        drivePump(false, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
+#else
+#endif
         digitalWrite(LED_BUILTIN, LOW);
         digitalWrite(PIN_LED_LARGE, LOW);
     }
 }
 
 
+void initModeLight(SharedState& s) {
+    s.tankCapacityGallons = TANK_CAPACITY_GALLONS;
+    s.GPHTotal = GPH_TOTAL;
+    s.waterTime = WATER_MS;
+    s.sleepTime = SLEEP_MS;
+    setState(s, Action::INIT_INTERVAL);
+}
+
+#ifdef ESP32
+
+void monitorMode(SharedState& s)
+{
+    sampleSoil(s, true);
+}
 // Cycles through configuration display items every 3 seconds in large font
 void displayConfiguration(SharedState& s)
 {
@@ -421,13 +438,6 @@ if (s.pumpRunning) {
 // // Use the TFT in main.cpp
 // extern TFT_eSPI tft;
 
-void initModeLight(SharedState& s) {
-    s.tankCapacityGallons = TANK_CAPACITY_GALLONS;
-    s.GPHTotal = GPH_TOTAL;
-    s.waterTime = WATER_MS;
-    s.sleepTime = SLEEP_MS;
-    setState(s, Action::INIT_INTERVAL);
-}
 
 // No-touch joystick-driven INIT screen
 void initMode(SharedState& s) {
@@ -627,3 +637,4 @@ void initMode(SharedState& s) {
     }
     swPrev = swPressed;
 }
+#endif
