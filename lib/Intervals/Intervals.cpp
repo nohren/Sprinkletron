@@ -7,10 +7,10 @@ bool isElapsedMillis(uint32_t startTime, uint32_t interval)
 }
 
 // given a start time and flash interval, return true if we are in the "on" phase of the flash cycle and false for "off" phase
-bool isFlashingMillis(uint32_t startTime, uint32_t flashInterval)
+bool isFlashingMillis(uint32_t flashInterval)
 {
     // else, elapsed, so flash
-    return ((millis() - startTime) % flashInterval) < (flashInterval / 2);
+    return millis() % (2 * flashInterval) < flashInterval;
 }
 
 uint32_t countdownMillis(uint32_t startMs, uint32_t durationMs) {
