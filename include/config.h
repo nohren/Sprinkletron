@@ -4,24 +4,25 @@
 // ---- Configuration ---------   Change these to match your setup and preferences
 
 // ---- Pin map
-#define PIN_SOIL_ADC 36   // sensor analog out -> ESP32 GPIO36
-#define PIN_SENSOR_PWR 27 // drives a transistor/high-side switch to power the sensor
-#define PIN_PUMP_GATE 21  // goes to MOSFET gate that switches the pump
-#define PIN_BUTTON 27     // push button to toggle pump on/off
-#define PIN_LED_LARGE 25
+#define PIN_SOIL_ADC A3//36   // sensor analog out -> ESP32 GPIO36
+#define PIN_SENSOR_PWR 6//27 // drives a transistor/high-side switch to power the sensor
+#define PIN_PUMP_GATE 3  // goes to MOSFET gate that switches the pump
+#define PIN_BUTTON 5     // push button to toggle pump on/off
+#define PIN_LED_LARGE 7
+
 #define PIN_JOY_X 39      // joystick VRx -> ADC capable pin (input only OK)
 #define PIN_JOY_Y 32      // joystick VRy -> ADC capable pin (input only OK)
 #define PIN_JOY_SW 33     // joystick switch (digital), active LOW with pull-up
+#define TFT_BL 4  
 #ifndef LED_BUILTIN
 #define LED_BUILTIN 2
 #endif
-#define TFT_BL 4  
 
 // interval mode settings
 static const float GPH_TOTAL = 4; // total galldon per hour heads on the line if using rainbird GPH heads
 static const float TANK_CAPACITY_GALLONS = 2.905; //11 liter tank has 2.905 gallons
 static const uint16_t WATER_MINUTES = 1;
-static constexpr float SLEEP_DAYS = 1.0/(24*60);
+static constexpr float SLEEP_DAYS = 5;//1.0/(24*60);
 // test off for 5 seconds, then on for half a min
 
 // monitor mode settings
@@ -104,6 +105,7 @@ void setState(SharedState& s, Action a);
 void printConfiguration(SharedState& s);
 void displayConfiguration(SharedState& s);
 void initMode(SharedState& s); // handle INIT mode UI (touch/button)
+void initModeLight(SharedState& s);
 
 
 // Optional: define two UI buttons for INIT navigation. If not provided,

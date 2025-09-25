@@ -1,6 +1,6 @@
 #pragma once
 bool isElapsedMillis(uint32_t startTime, uint32_t interval);
-bool isFlashingMillis(uint32_t startTime, uint32_t flashInterval);
+bool isFlashingMillis(uint32_t flashInterval);
 uint32_t countdownMillis(uint32_t startMs, uint32_t durationMs);
 String convertMillisToHHMMSS(uint32_t ms);
 String convertMillisToDays(uint32_t ms);

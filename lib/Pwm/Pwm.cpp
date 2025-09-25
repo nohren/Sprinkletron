@@ -1,6 +1,6 @@
 // PWM for ESP32
 #include <Arduino.h>
-
+#ifdef ESP32
 void initPWM(uint8_t pin, uint8_t PWM_CH, uint32_t PWM_FREQ, uint8_t PWM_RES_BITS)
 {
     ledcSetup(PWM_CH, PWM_FREQ, PWM_RES_BITS);
@@ -39,3 +39,4 @@ void drivePump(bool on, int targetPumpPct, int MIN_RUN_PCT, uint32_t pumpStartTi
         setPumpPct(pct, PWM_CH, PWM_RES_BITS);
     }
 }
+#endif

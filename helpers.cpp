@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <TFT_eSPI.h>
 #include "config.h"
 #include "Buttons.h"
 #include "Intervals.h"
 #ifdef ESP32
+#include <TFT_eSPI.h>
 #include <esp_sleep.h>
 #include "Pwm.h"
 // Call this instead of inlining sleep logic
@@ -36,10 +36,10 @@ void safeSleepSeconds(uint32_t seconds)
     esp_sleep_enable_timer_wakeup(us);
     esp_deep_sleep_start();
 }
+extern TFT_eSPI tft;
 #endif
 
 // Use the TFT in main.cpp
-extern TFT_eSPI tft;
 
 uint32_t totalActivations(float tankCapacityGallons, float gph, uint32_t waterIntervalMs) {
     if (gph <= 0.0f || waterIntervalMs == 0) return 0;
@@ -122,10 +122,15 @@ void button(SharedState& s)
 }
 
 void printConfiguration(SharedState& s) {
+    static uint32_t lastPrintMs = millis();
+    if (isElapsedMillis(lastPrintMs, 5000)) {
+        lastPrintMs = millis();
     if (s.mode == Mode::INTERVAL) {
         Serial.println(" Mode = INTERVAL ");
         Serial.print("  Water Interval (min): ");
         Serial.println(s.waterTime / 60000.0); //ms to minutes
+        Serial.print("  Sleep Time (days): ");
+        Serial.println(s.sleepTime / 86400000.0); //ms to days
         Serial.print("  Tank Capacity (gallons): ");
         Serial.println(s.tankCapacityGallons);
         Serial.print("  GPH Total: ");
@@ -134,6 +139,8 @@ void printConfiguration(SharedState& s) {
         Serial.println(s.activations);
         Serial.print("  Max Activations: ");
         Serial.println(s.maxActivations);
+        Serial.print("  pump state: ");
+        Serial.println(s.pumpRunning);
     }
     else if (s.mode == Mode::MONITOR) {
         Serial.println(" Mode = MONITOR ");
@@ -144,6 +151,7 @@ void printConfiguration(SharedState& s) {
         Serial.print("  Monitor Frequency: ");
         Serial.println(s.sleepTime / 60000.0); // ms to minutes
     }
+}
 }
 // (biz logic) waters at start of interval. Counts activations and stops when limit is reached.
 void intervalMode(SharedState& s) {
@@ -178,19 +186,14 @@ void intervalMode(SharedState& s) {
     }
 }
 
-void monitorMode(SharedState& s)
-{
-    sampleSoil(s, true);
-}
-
 void pump(SharedState& s)
 {
     if (s.pumpRunning)
     {
+        digitalWrite(PIN_PUMP_GATE, HIGH);
 #ifdef ESP32
         drivePump(true, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
 #else
-        digitalWrite(PIN_PUMP_GATE, HIGH);
 #endif
 
         digitalWrite(LED_BUILTIN, HIGH);
@@ -198,10 +201,10 @@ void pump(SharedState& s)
     }
     else
     {
+        digitalWrite(PIN_PUMP_GATE, LOW);
 #ifdef ESP32
         drivePump(false, s.targetPumpPct, MIN_RUN_PCT, s.pumpStartTime, SOFTSTART_MS, PWM_CH, PWM_RES_BITS);
 #else
-        digitalWrite(PIN_PUMP_GATE, LOW);
 #endif
         digitalWrite(LED_BUILTIN, LOW);
         digitalWrite(PIN_LED_LARGE, LOW);
@@ -209,6 +212,20 @@ void pump(SharedState& s)
 }
 
 
+void initModeLight(SharedState& s) {
+    s.tankCapacityGallons = TANK_CAPACITY_GALLONS;
+    s.GPHTotal = GPH_TOTAL;
+    s.waterTime = WATER_MS;
+    s.sleepTime = SLEEP_MS;
+    setState(s, Action::INIT_INTERVAL);
+}
+
+#ifdef ESP32
+
+void monitorMode(SharedState& s)
+{
+    sampleSoil(s, true);
+}
 // Cycles through configuration display items every 3 seconds in large font
 void displayConfiguration(SharedState& s)
 {
@@ -421,6 +438,7 @@ if (s.pumpRunning) {
 // // Use the TFT in main.cpp
 // extern TFT_eSPI tft;
 
+
 // No-touch joystick-driven INIT screen
 void initMode(SharedState& s) {
     static bool first = true;
@@ -619,3 +637,4 @@ void initMode(SharedState& s) {
     }
     swPrev = swPressed;
 }
+#endif
