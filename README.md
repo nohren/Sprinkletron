@@ -2,23 +2,32 @@
 
 An affectionately faithful plant waterer 🤖 💖 🌱 🦾
 
-A single-purpose, low-power plant watering node. It wakes from deep sleep in a set interval, waters the plant/s, and goes back to sleep.
+It runs in two modes.
 
-It can use a capacitive soil moisture sensor or just operated in a set interval. If using rainbird gph heads, provide the total gallons per hour in the system and the water tank capacity and it will calculate how many activations to run. This is so the pump doesn't dry out.
+1. Interval mode - waters every N hours for M minutes
+2. Soil moisture mode - waters when soil is dry, checks every N hours, waters if necessary.
 
-Lets say we have 4 x 1 gph heads. We want to water for 5 min every activation. And we supply 2 gallons of water.
+You can find either program in the sketch folder. Drag it out into src and rename to main.cpp to use. Interval should run on any architecture, soil moisture mode is ESP32 only.
 
-$4 \text{gph} \times \frac{1}{12} \text{hours} = 0.333 \text{ gallons per activation}$
-$2/\text{0.333} \text{ gallons per activation} = 6 \text{ activations}$
+If using rainbird gph heads, provide the total gallons per hour in the system and the water tank capacity and it will calculate how many activations to run. This is so the pump doesn't dry out.
 
-What it does **not** do:
+For example if we have a system of 4 x 1 gph heads. We want to water 5 min every activation. And we draw water from a 2 gallons bucket.
 
-- No networking, no clock sync, no manual override, no fancy scheduling
-- It only wakes, waters, then sleeps
+max activations = 6
 
-| ![Alt 1](./IMG_7923.jpeg) | ![Alt 2](./IMG_8048.jpeg) |
-| :-----------------------: | :-----------------------: |
-|      looking sad 😢       |     looking bad 😎 🤩     |
+$4 \text{gph} \times \frac{1}{12} \text{hours} = \frac{1}{3} \text{ gallons per activation}$
+
+$2/\frac{1}{3} \text{ gallons per activation} = 6$
+
+| ![Alt 1](./IMG_7923.jpeg) |   ![Alt 2](./IMG_8048.jpeg)   |
+| :-----------------------: | :---------------------------: |
+|   sad and forgotten 😢    | happy and taken care of 😎 🦾 |
+
+## Interval mode
+
+|      ![Alt 1](./IMG_9976.jpeg)       | ![Alt 2](./IMG_9977.jpeg) |
+| :----------------------------------: | :-----------------------: |
+| interval mode with two power sources |      GPH heads setup      |
 
 ## Install
 
@@ -47,6 +56,9 @@ pio run -e esp32dev -t upload
 [N-Channel Power MOSFET](https://www.amazon.com/dp/B08ZKYXN2M?ref=ppx_yo2ov_dt_b_fed_asin_title) - The MOSFET when it recieves 3.3v HIGH signal from the ESP32 will complete the pump circuit to ground allowing the pump to run. The MOSFET is used to switch the pump on and off.
 
 [Schottky Diode](https://www.amazon.com/dp/B0C1V6Y8ND?ref=ppx_yo2ov_dt_b_fed_asin_title) - A diode that is used to protect the MOSFET from back EMF when the pump is turned off. The cathode of the diode is connected to the +3.3V supply and the anode is connected to the pump negative terminal.
+
+RAINBIRD GPH HEADS:
+If you want to use these heads, just realize you may need two power sources as they cause the pump to draw more current causing MCU brownout if both are connected to the same 3v3 rail. Instead connect your MCU to power using the usb power input and connect the pump to a separate 3.3V power supply. Also it can help to add a large capacitor across the pump terminals to smooth out current spikes.
 
 ## Wiring
 
