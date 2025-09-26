@@ -1,6 +1,8 @@
 #include <Arduino.h>
 
 //given a start time and interval, return true if the interval has elapsed since the start time
+//
+//overflow safe
 bool isElapsedMillis(uint32_t startTime, uint32_t interval)
 {
     return (millis() - startTime) >= interval;
