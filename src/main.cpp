@@ -10,8 +10,6 @@
 #define GREEN_PIN 9
 #define BLUE_PIN 6
 
-//NEVER USE A3!!! IT IS CONNECTED TO GROUND
-
 struct SharedState
 {
     bool pumpRunning = false;   // true if pump is currently running
@@ -30,9 +28,9 @@ enum class Action
 
 static const uint32_t FLASH_INTERVAL_MS = 1000; // for led
 static const uint32_t ERROR_FLASH_INTERVAL_MS = 500; // for led
-static const uint32_t WATER_MS = 45000; // 45 seconds
+static const uint32_t WATER_MS = 40000; // 40 seconds
 static const uint32_t DAY_MS = 86400000; // 1 day
-static const uint32_t SLEEP_MS = 5 * DAY_MS; // 5 days
+static const uint32_t SLEEP_MS = 7 * DAY_MS; // 7 days
 static const float TANK_CAPACITY_GALLONS = 2.905; //11 liter tank has 2.905 gallons
 static const float GPH_TOTAL = 4; // total galldon per hour heads on the
 void printConfiguration(SharedState& s);
@@ -111,10 +109,10 @@ void intervalMode(SharedState& s) {
         if (isElapsedMillis(s.pumpStopTime, SLEEP_MS)) {
             if (s.activations < MAX_ACTIVATIONS) {
                 setState(s, Action::WATER);
-                Serial.print("Activations: ");
-                Serial.println(s.activations);
-                Serial.print("Activation limit: ");
-                Serial.println(MAX_ACTIVATIONS);
+                // Serial.print("Activations: ");
+                // Serial.println(s.activations);
+                // Serial.print("Activation limit: ");
+                // Serial.println(MAX_ACTIVATIONS);
             }
             else {
                 // Serial.println("Activation limit reached, refill water and toggle on off to reset.");
@@ -132,7 +130,7 @@ void intervalMode(SharedState& s) {
     }
     else {
         if (isElapsedMillis(s.pumpStartTime, WATER_MS)) {
-            Serial.println("Water interval complete, stopping pump.");
+            //Serial.println("Water interval complete, stopping pump.");
             setState(s, Action::DRY);
         }
     }
