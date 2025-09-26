@@ -7,17 +7,9 @@ It runs in two modes.
 1. Interval mode - waters every N hours for M minutes
 2. Soil moisture mode - waters when soil is dry, checks every N hours, waters if necessary.
 
-You can find either program in the sketch folder. Drag it out into src and rename to main.cpp to use. Interval should run on any architecture, soil moisture mode is ESP32 only.
+You can find either program in the sketch folder. Drag it out into src and rename to main.cpp to use. Interval should run on any architecture, soil moisture mode is currently ESP32 only.
 
-If using rainbird gph heads, provide the total gallons per hour in the system and the water tank capacity and it will calculate how many activations to run. This is so the pump doesn't dry out.
-
-For example if we have a system of 4 x 1 gph heads. We want to water 5 min every activation. And we draw water from a 2 gallons bucket.
-
-max activations = 6
-
-$4 \text{gph} \times \frac{1}{12} \text{hours} = \frac{1}{3} \text{ gallons per activation}$
-
-$2/\frac{1}{3} \text{ gallons per activation} = 6$
+If using rainbird gph heads, you can provide the total gallons per hour and it will make sure the pump doesn't dry out.
 
 | ![Alt 1](./IMG_7923.jpeg) |   ![Alt 2](./IMG_8048.jpeg)   |
 | :-----------------------: | :---------------------------: |
@@ -31,7 +23,7 @@ $2/\frac{1}{3} \text{ gallons per activation} = 6$
 
 ## Install
 
-I used [PlatformIO](https://platformio.org/) to build and upload the code to the ESP32. Get the VSCode extension or just install the CLI tool.
+This project uses [PlatformIO](https://platformio.org/) as the build toolchain. Get the VSCode extension or just install the CLI tool.
 
 ```bash
 pio project init --board esp32dev
@@ -57,14 +49,15 @@ pio run -e esp32dev -t upload
 
 [Schottky Diode](https://www.amazon.com/dp/B0C1V6Y8ND?ref=ppx_yo2ov_dt_b_fed_asin_title) - A diode that is used to protect the MOSFET from back EMF when the pump is turned off. The cathode of the diode is connected to the +3.3V supply and the anode is connected to the pump negative terminal.
 
-RAINBIRD GPH HEADS:
+**NOTE: RAINBIRD GPH HEADS:**
+
 If you want to use these heads, just realize you may need two power sources as they cause the pump to draw more current causing MCU brownout if both are connected to the same 3v3 rail. Instead connect your MCU to power using the usb power input and connect the pump to a separate 3.3V power supply. Also it can help to add a large capacitor across the pump terminals to smooth out current spikes.
 
 ## Wiring
 
 <img src="./image.png" width="1400" alt="Sprinkletron GPIO Pinout">
 
-I used a breadboard to wire the components together. The wiring is as follows:
+For basic configuration I used a breadboard to wire the components together. The wiring is as follows:
 
 - Soil moisture sensor:
 
@@ -99,7 +92,7 @@ I used a breadboard to wire the components together. The wiring is as follows:
 
 <img src="./IMG_8050.jpeg" width="1400" alt="Sprinkletron GPIO Pinout">
 
-## Pulse with Modulation (PWM)
+## PWM Overview
 
 Digital devices output 1's and 0's. i.e HIGH or LOW signal. So how do we change the power of the motor if we can only tell it to be ON or OFF? It turns out that we can approximate an analog signal by switching the pump on for a period of time and off again in a repeating cycle. This technique is called Pulse Width Modulation (PWM). The ratio of the time the pump is on to the total time of the cycle is called the duty cycle. The duty cycle is expressed as a percentage, where 100% means the pump is always on, and 0% means it is always off.
 
@@ -150,17 +143,3 @@ ledcWrite(PWM_CH, duty);
 ```
 
 Now for each $50 \mu s$ cycle we get the pump on for $40 \mu s$ and off for $10 \mu s$. This approximates 80% power with a digital signal.
-
-## Notes
-
-- Make sure all ground is common between the ESP32, pump, all sensors.
-- State machines are the most underrated concept in all of programming.
-- PWM - understand the duty cycle.
-- don't forget semicolons when compiling C++ code.
-
-### Risks & Mitigations
-
-- **Noisy sensor / false dry:** median filter + enforce min hours between waterings
-- **Flooding if stuck-low sensor:** hard cap on pump run time; min interval block
-- **Boot-time glitches:** pump gate pulldown resistor; initialize gate LOW early
-- **Power draw:** deep sleep between checks; sensor only powered while measuring
