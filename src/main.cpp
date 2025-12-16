@@ -28,11 +28,7 @@ enum class Action
 
 static const uint32_t FLASH_INTERVAL_MS = 1000; // for led
 static const uint32_t ERROR_FLASH_INTERVAL_MS = 500; // for led
-static const uint32_t WATER_MS = 40000; // 40 seconds
 static const uint32_t DAY_MS = 86400000; // 1 day
-static const uint32_t SLEEP_MS = 7 * DAY_MS; // 7 days
-static const float TANK_CAPACITY_GALLONS = 2.905; //11 liter tank has 2.905 gallons
-static const float GPH_TOTAL = 4; // total galldon per hour heads on the
 void printConfiguration(SharedState& s);
 void setState(SharedState& s, Action a);
 void intervalMode(SharedState& s);
@@ -41,10 +37,19 @@ uint32_t totalActivations(float tankCapacityGallons, float gph, uint32_t waterIn
 void button(SharedState& s);
 void setRGB(uint8_t r, uint8_t g, uint8_t b);
 void updateGradient(uint32_t now, uint32_t intervalMs, uint32_t lastWaterStop, uint32_t stepMs = 100);
-static const uint32_t MAX_ACTIVATIONS = totalActivations(TANK_CAPACITY_GALLONS, GPH_TOTAL, WATER_MS);
 const bool COMMON_ANODE = false;  // likely true based on your symptom
 
+//***********************CONFIG AREA ***********************/
+static const uint32_t WATER_MS = 60000; // water for x minutes per session
+static const uint32_t SLEEP_MS = 14 * DAY_MS; // timer for 14 days
+static const float TANK_CAPACITY_GALLONS = 2.205; //how much water in the tank?
+// 11 liter tank has 2.905 gallons... usually 2.905 but some is gone so use 2.505 is rough estimate
+static const float GPH_TOTAL = 6; // how many gallons per hour heads on the line
+
+//***********************END CONFIG AREA *******************/
+
 SharedState state;
+static const uint32_t MAX_ACTIVATIONS = totalActivations(TANK_CAPACITY_GALLONS, GPH_TOTAL, WATER_MS);
 
 void setup() {
     Serial.begin(115200);
